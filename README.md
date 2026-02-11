@@ -19,7 +19,7 @@
 
 ## About
 
-Doggo is a terminal emulator built with Electron, React, and TypeScript. It provides a vertical tab layout, split panes, deep git integration, AI-powered command generation, and session persistence -- all in a fast, GPU-accelerated package.
+Doggo is a GPU-accelerated terminal emulator. It provides a vertical tab layout, split panes, deep git integration, AI-powered command generation, and session persistence -- all in a fast,  package.
 
 The goal is a terminal that feels like a modern development tool rather than a legacy utility. Profiles, a command palette, and editor integration (VS Code, Cursor) keep common workflows a keystroke away.
 
