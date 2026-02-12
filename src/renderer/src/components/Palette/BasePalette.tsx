@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { Dialog, DialogContent, DialogTitle } from '../ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { Kbd } from '../ui/kbd'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
@@ -65,6 +65,9 @@ export function BasePalette({
       >
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search and select an item from the list. Use arrow keys to navigate and Enter to confirm.
+        </DialogDescription>
 
         {/* Search Input */}
         <div className="relative border-b border-[hsl(220,15%,18%)]">
