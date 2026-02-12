@@ -218,7 +218,7 @@ async function gitFetch(cwd: string): Promise<GitOperationResult> {
 
 async function gitCommit(cwd: string, message: string): Promise<GitOperationResult> {
   try {
-    const escapedMessage = message.replace(/"/g, '\\"')
+    const escapedMessage = message.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
     const { stdout } = await runGitCommand(cwd, `commit -m "${escapedMessage}"`)
     return { success: true, message: stdout.trim() }
   } catch (err) {
