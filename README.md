@@ -102,6 +102,14 @@ pnpm run lint          # lint
 pnpm run format        # format
 ```
 
+### Updating App Icons
+
+```bash
+pnpm run build-icons
+```
+
+Run this only when `resources/doggo.png` changes. Generated icons in `build/` are committed.
+
 ## Releases
 
 - Stable releases are created by release-please and use tags like `v1.2.3`.
@@ -112,6 +120,11 @@ pnpm run format        # format
 - Canary prereleases are created from `main` with tags like `canary-YYYYMMDD-HHMM-<shortsha>`.
 - Canary artifacts are currently macOS-only.
 - Canary builds do not modify `package.json` version.
+- Stable and canary macOS artifacts are code-signed in CI using Apple Developer credentials.
+- Stable `v*` releases are notarized by default.
+- Canary notarization is optional via manual dispatch input `enable_notarization` (default: off).
+- Required GitHub secrets for signing: `APPLE_SIGNING_CERT`, `APPLE_SIGNING_CERT_PASSWORD`, `APPLE_SIGNING_IDENTITY`.
+- Required GitHub secrets for notarization: `APPLE_NOTARY_APPLE_ID`, `APPLE_NOTARY_APP_PASSWORD`, `APPLE_NOTARY_TEAM_ID`.
 - Build metadata (commit SHA and build date) is logged at startup and shown in About panel credits.
 
 ## Roadmap

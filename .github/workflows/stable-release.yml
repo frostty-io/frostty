@@ -1,33 +1,24 @@
-name: canary
+name: stable-release
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      enable_notarization:
-        description: 'Enable Apple notarization for this canary run'
-        type: boolean
-        required: false
-        default: false
+  release:
+    types:
+      - published
 
 permissions:
   contents: write
 
-concurrency:
-  group: canary-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  canary:
-    name: canary
+  stable-release:
+    name: stable-release
+    if: ${{ github.event.release.prerelease == false && startsWith(github.event.release.tag_name, 'v') }}
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -44,20 +35,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Compute canary metadata
-        id: canary_meta
+      - name: Set build metadata
         run: |
-          BUILD_DATE_ISO="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          BUILD_DATE_TAG="$(date -u +'%Y%m%d-%H%M')"
-          BUILD_DATE_NAME="$(date -u +'%Y-%m-%d %H:%M UTC')"
-          SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="canary-${BUILD_DATE_TAG}-${SHORT_SHA}"
-          RELEASE_NAME="Canary ${BUILD_DATE_NAME}"
-
-          echo "build_date_iso=${BUILD_DATE_ISO}" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "DOGGO_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "DOGGO_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: Lint
         run: pnpm run lint
@@ -66,9 +47,6 @@ jobs:
         run: pnpm exec vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml
 
       - name: Build
-        env:
-          DOGGO_BUILD_SHA: ${{ steps.canary_meta.outputs.short_sha }}
-          DOGGO_BUILD_DATE: ${{ steps.canary_meta.outputs.build_date_iso }}
         run: pnpm run build
 
       - name: Validate Apple signing secrets
@@ -88,8 +66,7 @@ jobs:
             exit 1
           fi
 
-      - name: Configure optional notarization
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.enable_notarization == 'true' }}
+      - name: Configure required notarization
         env:
           APPLE_NOTARY_APPLE_ID: ${{ secrets.APPLE_NOTARY_APPLE_ID }}
           APPLE_NOTARY_APP_PASSWORD: ${{ secrets.APPLE_NOTARY_APP_PASSWORD }}
@@ -124,13 +101,12 @@ jobs:
             shasum -a 256 "$file" >> dist/SHA256SUMS.txt
           done < <(find dist -type f \( -name '*.dmg' -o -name '*.zip' \) -print0)
 
-      - name: Create GitHub prerelease
+      - name: Upload artifacts to stable release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.canary_meta.outputs.tag }}
-          name: ${{ steps.canary_meta.outputs.release_name }}
-          prerelease: true
+          tag_name: ${{ github.event.release.tag_name }}
           fail_on_unmatched_files: false
+          overwrite_files: true
           files: |
             dist/*.dmg
             dist/*.zip
@@ -138,33 +114,12 @@ jobs:
             dist/latest*.yml
             dist/SHA256SUMS.txt
 
-      - name: Cleanup old canary releases
-        uses: actions/github-script@v7
-        env:
-          KEEP_CANARY: '20'
+      - name: Upload test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const keep = Number(process.env.KEEP_CANARY || '20')
-            const { owner, repo } = context.repo
-            const releases = await github.paginate(github.rest.repos.listReleases, {
-              owner,
-              repo,
-              per_page: 100
-            })
-
-            const canaries = releases
-              .filter((release) => release.tag_name && release.tag_name.startsWith('canary-'))
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-            const toDelete = canaries.slice(keep)
-            core.info(`Found ${canaries.length} canary releases, deleting ${toDelete.length}.`)
-
-            for (const release of toDelete) {
-              core.info(`Deleting release ${release.tag_name}`)
-              await github.rest.repos.deleteRelease({ owner, repo, release_id: release.id })
-              try {
-                await github.rest.git.deleteRef({ owner, repo, ref: `tags/${release.tag_name}` })
-              } catch (error) {
-                core.warning(`Could not delete tag ${release.tag_name}: ${error.message}`)
-              }
-            }
+          name: stable-release-test-artifacts
+          if-no-files-found: ignore
+          path: |
+            coverage/**
+            test-results/**

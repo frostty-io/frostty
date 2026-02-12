@@ -7,6 +7,11 @@
 - Keep the `pr-ci` required check green before requesting review.
 - Expect CI to run lint, unit tests, and build on every PR.
 
+## App Icons
+
+- Generated platform icon files live in `build/` and are committed to source control.
+- If `resources/doggo.png` changes, run `pnpm run build-icons` and commit updated files in `build/`.
+
 ## Conventional Commits (Required for Releases)
 
 Release versions are determined from PR titles or squash commit messages:

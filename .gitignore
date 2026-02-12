@@ -8,7 +8,11 @@ out
 dist
 
 # Build resources (generated icons for electron-builder)
-build
+build/*
+!build/icon.icns
+!build/icon.ico
+!build/icon.png
+!build/icon_256.png
 
 # Environment & secrets
 .env

@@ -126,7 +126,6 @@
     "mac": {
       "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools",
-      "identity": "Doggo Development",
       "target": [
         {
           "target": "dmg",
