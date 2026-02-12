@@ -29,12 +29,14 @@ import {
   registerWindowHandlers,
   initWindows,
   createWindow,
-  getWindows,
   startQuitFlow
 } from './windowManager'
 import { setupApplicationMenu } from './menuManager'
 
 const execAsync = promisify(exec)
+const BUILD_SHA = __DOGGO_BUILD_SHA__
+const BUILD_DATE = __DOGGO_BUILD_DATE__
+const BUILD_INFO = `Build ${BUILD_SHA} (${BUILD_DATE})`
 
 // ── IPC Handlers (remaining) ─────────────────────────────────────────────────
 
@@ -138,7 +140,7 @@ app.whenReady().then(async () => {
     applicationName: 'Doggo',
     applicationVersion: app.getVersion(),
     copyright: '© Doggo Contributors',
-    credits: 'A modern GPU accelerated terminal emulator.',
+    credits: `A modern GPU accelerated terminal emulator.\n${BUILD_INFO}`,
     iconPath: join(__dirname, '../../resources/doggo.png')
   })
 

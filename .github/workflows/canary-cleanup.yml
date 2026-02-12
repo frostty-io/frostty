@@ -1,0 +1,46 @@
+name: canary-cleanup
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  canary-cleanup:
+    name: canary-cleanup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cleanup old canary releases
+        uses: actions/github-script@v7
+        env:
+          KEEP_CANARY: '20'
+        with:
+          script: |
+            const keep = Number(process.env.KEEP_CANARY || '20')
+            const { owner, repo } = context.repo
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner,
+              repo,
+              per_page: 100
+            })
+
+            const canaries = releases
+              .filter((release) => release.tag_name && release.tag_name.startsWith('canary-'))
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+            const toDelete = canaries.slice(keep)
+            core.info(`Found ${canaries.length} canary releases, deleting ${toDelete.length}.`)
+
+            for (const release of toDelete) {
+              core.info(`Deleting release ${release.tag_name}`)
+              await github.rest.repos.deleteRelease({ owner, repo, release_id: release.id })
+              try {
+                await github.rest.git.deleteRef({ owner, repo, ref: `tags/${release.tag_name}` })
+              } catch (error) {
+                core.warning(`Could not delete tag ${release.tag_name}: ${error.message}`)
+              }
+            }

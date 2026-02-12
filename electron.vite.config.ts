@@ -3,8 +3,15 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { copyFileSync, mkdirSync, existsSync } from 'fs'
 
+const buildSha = process.env.DOGGO_BUILD_SHA ?? process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'
+const buildDate = process.env.DOGGO_BUILD_DATE ?? new Date().toISOString()
+
 export default defineConfig({
   main: {
+    define: {
+      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
+      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+    },
     plugins: [
       externalizeDepsPlugin(),
       {
@@ -34,6 +41,10 @@ export default defineConfig({
     }
   },
   preload: {
+    define: {
+      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
+      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+    },
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
@@ -44,6 +55,10 @@ export default defineConfig({
     }
   },
   renderer: {
+    define: {
+      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
+      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+    },
     root: 'src/renderer',
     resolve: {
       alias: {

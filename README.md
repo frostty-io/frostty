@@ -14,6 +14,8 @@
   ·
   <a href="#developing">Developing</a>
   ·
+  <a href="#releases">Releases</a>
+  ·
   <a href="#roadmap">Roadmap</a>
 </p>
 
@@ -99,6 +101,18 @@ pnpm run test:main     # main process tests
 pnpm run lint          # lint
 pnpm run format        # format
 ```
+
+## Releases
+
+- Stable releases are created by release-please and use tags like `v1.2.3`.
+- Version bumps follow Conventional Commits in PR titles or squash commit messages:
+  - `fix:` -> patch
+  - `feat:` -> minor
+  - `feat!:` or `BREAKING CHANGE:` -> major
+- Canary prereleases are created from `main` with tags like `canary-YYYYMMDD-HHMM-<shortsha>`.
+- Canary artifacts are currently macOS-only.
+- Canary builds do not modify `package.json` version.
+- Build metadata (commit SHA and build date) is logged at startup and shown in About panel credits.
 
 ## Roadmap
 
