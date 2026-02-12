@@ -18,6 +18,12 @@ import { GIT_MAX_BUFFER } from '../shared/constants'
 
 const execAsync = promisify(exec)
 
+// Escape a string for safe inclusion inside double quotes in a shell command line.
+// This function first escapes backslashes, then double quotes.
+function escapeShellDoubleQuoted(input: string): string {
+  return input.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
 // ── Git helpers ──────────────────────────────────────────────────────────────
 
 const GIT_COMMAND_TIMEOUT_MS = 10_000
@@ -218,7 +224,7 @@ async function gitFetch(cwd: string): Promise<GitOperationResult> {
 
 async function gitCommit(cwd: string, message: string): Promise<GitOperationResult> {
   try {
-    const escapedMessage = message.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    const escapedMessage = escapeShellDoubleQuoted(message)
     const { stdout } = await runGitCommand(cwd, `commit -m "${escapedMessage}"`)
     return { success: true, message: stdout.trim() }
   } catch (err) {
@@ -251,7 +257,7 @@ async function gitUnstage(cwd: string, files: string[]): Promise<GitOperationRes
 
 async function gitStash(cwd: string, message?: string): Promise<GitOperationResult> {
   try {
-    const msgFlag = message ? `-m "${message.replace(/"/g, '\\"')}"` : ''
+    const msgFlag = message ? `-m "${escapeShellDoubleQuoted(message)}"` : ''
     await runGitCommand(cwd, `stash push ${msgFlag}`)
     return { success: true, message: 'Changes stashed' }
   } catch (err) {
