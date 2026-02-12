@@ -94,6 +94,32 @@ jobs:
           CSC_NAME: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: pnpm exec electron-builder --mac --publish never
 
+      - name: Release smoke verification
+        run: |
+          set -euo pipefail
+
+          if ! ls dist/*.dmg >/dev/null 2>&1; then
+            echo "::error::No .dmg artifact found in dist/"
+            exit 1
+          fi
+
+          if ! ls dist/*.zip >/dev/null 2>&1; then
+            echo "::error::No .zip artifact found in dist/"
+            exit 1
+          fi
+
+          APP_PATH="$(find dist -type d -name '*.app' | head -n 1)"
+          if [ -z "${APP_PATH}" ]; then
+            echo "::error::No .app bundle found under dist/"
+            exit 1
+          fi
+
+          echo "Validating codesign for ${APP_PATH}"
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+
+          echo "Assessing Gatekeeper policy for ${APP_PATH}"
+          spctl --assess --type execute --verbose=4 "${APP_PATH}"
+
       - name: Generate checksums
         run: |
           rm -f dist/SHA256SUMS.txt
