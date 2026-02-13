@@ -125,7 +125,7 @@ export function AISettings({ settings, onUpdate }: AISettingsProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className="min-w-[var(--radix-dropdown-menu-trigger-width)] max-h-64"
+              className="min-w-(--radix-dropdown-menu-trigger-width) max-h-64"
             >
               {FREE_MODELS.map((model) => {
                 const isSelected = localModel === model.value

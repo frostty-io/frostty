@@ -205,7 +205,7 @@ export default function ProjectPalette({
                   'transition-all duration-150 ease-out',
                   'text-left group cursor-pointer',
                   isSelected
-                    ? 'bg-gradient-to-r from-[hsl(150,60%,40%)]/15 to-transparent border-l-2 border-[hsl(150,60%,45%)]'
+                    ? 'bg-linear-to-r from-[hsl(150,60%,40%)]/15 to-transparent border-l-2 border-[hsl(150,60%,45%)]'
                     : 'border-l-2 border-transparent hover:bg-[hsl(220,15%,14%)]'
                 )}
               >

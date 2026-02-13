@@ -139,7 +139,7 @@ export function ProfileEditor({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="min-w-[var(--radix-dropdown-menu-trigger-width)]"
+            className="min-w-(--radix-dropdown-menu-trigger-width)"
           >
             {SHELL_OPTIONS.map((option) => {
               const available = isShellAvailable(option.value)

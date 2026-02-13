@@ -448,7 +448,7 @@ export default function CommandPalette({
                   'transition-all duration-150 ease-out',
                   'text-left group cursor-pointer',
                   isSelected
-                    ? 'bg-gradient-to-r from-[hsl(210,100%,50%)]/15 to-transparent border-l-2 border-[hsl(210,100%,55%)]'
+                    ? 'bg-linear-to-r from-[hsl(210,100%,50%)]/15 to-transparent border-l-2 border-[hsl(210,100%,55%)]'
                     : 'border-l-2 border-transparent hover:bg-[hsl(220,15%,14%)]'
                 )}
               >

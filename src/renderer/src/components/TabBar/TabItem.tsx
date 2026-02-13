@@ -69,7 +69,7 @@ function SplitPaneItem({
           ? activeState
             ? 'bg-accent/15 border border-accent/30'
             : 'bg-white/10 border border-white/10'
-          : 'bg-white/[0.03] border border-transparent hover:bg-white/[0.06]'
+          : 'bg-white/3 border border-transparent hover:bg-white/6'
         }
       `}
       onClick={(e) => {

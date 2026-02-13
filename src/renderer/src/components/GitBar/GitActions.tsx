@@ -65,7 +65,7 @@ export default function GitActions({
                 size="sm"
                 onClick={onOpenInCursor}
                 disabled={isLoading}
-                className="h-7 px-2 rounded-none hover:bg-white/5 text-muted-foreground hover:text-[#fff] transition-colors"
+                className="h-7 px-2 rounded-none hover:bg-white/5 text-muted-foreground hover:text-white transition-colors"
               >
                 <CursorIcon className="w-3.5 h-3.5" />
               </Button>
