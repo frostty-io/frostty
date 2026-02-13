@@ -35,6 +35,15 @@ if (typeof window !== 'undefined') {
   }
 }
 
+function safeDisposeWebglAddon(addon: WebglAddon | null): void {
+  if (!addon) return
+  try {
+    addon.dispose()
+  } catch (e) {
+    console.warn('Error disposing WebGL addon:', e)
+  }
+}
+
 export function useTerminalCore({
   tabId,
   isActive,
@@ -148,13 +157,12 @@ export function useTerminalCore({
       try {
         const webglAddon = new WebglAddon()
         webglAddon.onContextLoss(() => {
-          console.warn('WebGL context lost, disposing addon')
-          try {
-            //   webglAddon.dispose()
-          } catch (e) {
-            console.warn('Error disposing WebGL addon on context loss:', e)
+          // Force fallback to non-WebGL renderer after context loss.
+          if (webglAddonRef.current === webglAddon) {
+            webglAddonRef.current = null
           }
-          webglAddonRef.current = null
+          safeDisposeWebglAddon(webglAddon)
+          console.warn('WebGL context lost; fell back to canvas renderer')
         })
         terminal.loadAddon(webglAddon)
         webglAddonRef.current = webglAddon
@@ -285,14 +293,9 @@ export function useTerminalCore({
       isDisposedRef.current = true
 
       // Dispose WebGL addon first (before terminal)
-      if (webglAddonRef.current) {
-        try {
-          webglAddonRef.current.dispose()
-        } catch (e) {
-          console.warn('Error disposing WebGL addon:', e)
-        }
-        webglAddonRef.current = null
-      }
+      const webglAddon = webglAddonRef.current
+      webglAddonRef.current = null
+      safeDisposeWebglAddon(webglAddon)
 
       // Then dispose the terminal
       if (terminalRef.current) {
