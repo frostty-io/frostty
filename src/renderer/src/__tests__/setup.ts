@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import { vi } from 'vitest'
 
 // Mock the electronAPI globally for all renderer tests
 const mockElectronAPI = {
@@ -13,6 +14,7 @@ const mockElectronAPI = {
   onPtyData: vi.fn().mockReturnValue(() => {}),
   onPtyExit: vi.fn().mockReturnValue(() => {}),
   onPtyCwd: vi.fn().mockReturnValue(() => {}),
+  gitRepoInfo: vi.fn().mockResolvedValue({ isRepo: false, repoName: '', branch: '' }),
   gitStatus: vi.fn().mockResolvedValue({ isRepo: false, branch: '', upstream: null, ahead: 0, behind: 0, staged: [], unstaged: [], untracked: [], conflicted: [], stashCount: 0 }),
   gitBranches: vi.fn().mockResolvedValue([]),
   gitCheckout: vi.fn().mockResolvedValue({ success: true, message: '' }),

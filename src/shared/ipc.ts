@@ -35,6 +35,7 @@ export const IPC_CHANNELS = {
   GIT_STASH_POP: 'git:stashPop',
   GIT_STASH_LIST: 'git:stashList',
   GIT_DISCARD: 'git:discard',
+  GIT_REPO_INFO: 'git:repoInfo',
   SCAN_GIT_REPOS: 'fs:scanGitRepos',
   // Editor channels
   OPEN_IN_VSCODE: 'editor:openVSCode',
@@ -138,6 +139,12 @@ export interface GitFileStatus {
   path: string
   status: 'modified' | 'added' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'ignored'
   staged: boolean
+}
+
+export interface GitRepoInfoResult {
+  isRepo: boolean
+  repoName: string   // basename of the repo root directory
+  branch: string     // current branch or 'HEAD' if detached
 }
 
 export interface GitStatus {
@@ -296,6 +303,7 @@ export interface ElectronAPI {
   onPtyExit: (callback: (event: PtyExitEvent) => void) => () => void
   onPtyCwd: (callback: (event: PtyCwdEvent) => void) => () => void
   // Git APIs
+  gitRepoInfo: (cwd: string) => Promise<GitRepoInfoResult>
   gitStatus: (cwd: string) => Promise<GitStatus>
   gitBranches: (cwd: string) => Promise<GitBranch[]>
   gitCheckout: (cwd: string, branch: string, create?: boolean) => Promise<GitOperationResult>

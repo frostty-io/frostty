@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { X, GripVertical, Ungroup } from 'lucide-react'
+import { X, GripVertical, Ungroup, GitBranch } from 'lucide-react'
 import {
   ItemContent,
   ItemTitle,
@@ -10,6 +10,7 @@ import {
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { getShellName, shortenPath, formatHotkey } from '@/lib/terminal-utils'
 import { usePlatform } from '@/hooks/usePlatform'
+import { useGitRepoInfo } from '@/hooks/useGitRepoInfo'
 import type { TabEntry, Profile } from '@shared/ipc'
 
 // Helper: get display title for a pane with profile name
@@ -30,6 +31,96 @@ export function getTabColor(tab: TabEntry, profiles: Profile[]): string {
     if (profile) return profile.tabColor
   }
   return profiles[0]?.tabColor ?? '#3b82f6'
+}
+
+// --- Single pane within a split tab (extracted so it can use hooks) ---
+function SplitPaneItem({
+  pane,
+  tabId,
+  isPaneFocused,
+  activeState,
+  showClose,
+  onTabClick,
+  onPaneClick,
+  onPaneClose,
+  profiles
+}: {
+  pane: TabEntry['panes'][0]
+  tabId: string
+  isPaneFocused: boolean
+  activeState: boolean
+  showClose: boolean
+  onTabClick: (tabId: string) => void
+  onPaneClick?: (tabId: string, paneId: string) => void
+  onPaneClose?: (tabId: string, paneId: string) => void
+  profiles: Profile[]
+}) {
+  const pShellName = getPaneTitle(pane, profiles)
+  const pShortPath = shortenPath(pane.cwd, 2)
+  const gitInfo = useGitRepoInfo(pane.cwd)
+
+  return (
+    <div
+      className={`
+        group/pane relative flex-1 min-w-0
+        rounded-md px-2.5 py-2 cursor-pointer
+        transition-all duration-150
+        ${isPaneFocused
+          ? activeState
+            ? 'bg-accent/15 border border-accent/30'
+            : 'bg-white/10 border border-white/10'
+          : 'bg-white/[0.03] border border-transparent hover:bg-white/[0.06]'
+        }
+      `}
+      onClick={(e) => {
+        e.stopPropagation()
+        onTabClick(tabId)
+        onPaneClick?.(tabId, pane.id)
+      }}
+    >
+      <div className={`font-mono truncate text-[11px] leading-tight ${
+        isPaneFocused
+          ? activeState ? 'text-text-secondary font-medium' : 'text-muted-foreground font-medium'
+          : 'text-muted-foreground/50 group-hover/pane:text-muted-foreground/70'
+      }`}>
+        {pShellName}
+      </div>
+      <div className={`font-mono truncate text-[10px] leading-tight mt-0.5 flex items-center gap-1 ${
+        isPaneFocused
+          ? activeState ? 'text-foreground/80' : 'text-muted-foreground/50'
+          : 'text-muted-foreground/30 group-hover/pane:text-muted-foreground/40'
+      }`} title={gitInfo?.isRepo ? `${gitInfo.repoName}:${gitInfo.branch}` : pane.cwd}>
+        {gitInfo?.isRepo ? (
+          <>
+            <GitBranch className="w-2.5 h-2.5 shrink-0" />
+            <span className="truncate">{gitInfo.repoName}:{gitInfo.branch}</span>
+          </>
+        ) : (
+          pShortPath
+        )}
+      </div>
+      {showClose && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onPaneClose?.(tabId, pane.id)
+          }}
+          className="
+            absolute top-1 right-1
+            opacity-0 group-hover/pane:opacity-100
+            size-4 rounded
+            flex items-center justify-center
+            text-muted-foreground/40
+            hover:text-destructive hover:bg-destructive/20
+            transition-all duration-150
+          "
+          title="Close pane"
+        >
+          <X className="w-2.5 h-2.5" />
+        </button>
+      )}
+    </div>
+  )
 }
 
 // --- Split pane view inside a tab ---
@@ -73,67 +164,20 @@ function SplitTabItem({
       >
         <Ungroup className="w-3 h-3" />
       </button>
-      {tab.panes.map((pane) => {
-        const pShellName = getPaneTitle(pane, profiles)
-        const pShortPath = shortenPath(pane.cwd, 2)
-        const isPaneFocused = tab.activePaneId === pane.id
-        return (
-          <div
-            key={pane.id}
-            className={`
-              group/pane relative flex-1 min-w-0
-              rounded-md px-2.5 py-2 cursor-pointer
-              transition-all duration-150
-              ${isPaneFocused
-                ? activeState
-                  ? 'bg-accent/15 border border-accent/30'
-                  : 'bg-white/10 border border-white/10'
-                : 'bg-white/[0.03] border border-transparent hover:bg-white/[0.06]'
-              }
-            `}
-            onClick={(e) => {
-              e.stopPropagation()
-              onTabClick(tab.id)
-              onPaneClick?.(tab.id, pane.id)
-            }}
-          >
-            <div className={`font-mono truncate text-[11px] leading-tight ${
-              isPaneFocused
-                ? activeState ? 'text-text-secondary font-medium' : 'text-muted-foreground font-medium'
-                : 'text-muted-foreground/50 group-hover/pane:text-muted-foreground/70'
-            }`}>
-              {pShellName}
-            </div>
-            <div className={`font-mono truncate text-[10px] leading-tight mt-0.5 ${
-              isPaneFocused
-                ? activeState ? 'text-foreground/80' : 'text-muted-foreground/50'
-                : 'text-muted-foreground/30 group-hover/pane:text-muted-foreground/40'
-            }`} title={pane.cwd}>
-              {pShortPath}
-            </div>
-            {tab.panes.length > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onPaneClose?.(tab.id, pane.id)
-                }}
-                className="
-                  absolute top-1 right-1
-                  opacity-0 group-hover/pane:opacity-100
-                  size-4 rounded
-                  flex items-center justify-center
-                  text-muted-foreground/40
-                  hover:text-destructive hover:bg-destructive/20
-                  transition-all duration-150
-                "
-                title="Close pane"
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
-            )}
-          </div>
-        )
-      })}
+      {tab.panes.map((pane) => (
+        <SplitPaneItem
+          key={pane.id}
+          pane={pane}
+          tabId={tab.id}
+          isPaneFocused={tab.activePaneId === pane.id}
+          activeState={activeState}
+          showClose={tab.panes.length > 1}
+          onTabClick={onTabClick}
+          onPaneClick={onPaneClick}
+          onPaneClose={onPaneClose}
+          profiles={profiles}
+        />
+      ))}
     </div>
   )
 }
@@ -186,6 +230,7 @@ function SortableTabItem({
   const shellName = primaryPane ? getPaneTitle(primaryPane, profiles) : 'shell'
   const shortPath = primaryPane ? shortenPath(primaryPane.cwd, 2) : '~'
   const hotkeyParts = index < 9 ? formatHotkey((index + 1).toString(), modSymbol) : null
+  const gitInfo = useGitRepoInfo(primaryPane?.cwd)
 
   // Resolve tab color from profile (always returns a color)
   const profileColor = getTabColor(tab, profiles)
@@ -274,13 +319,20 @@ function SortableTabItem({
             </ItemTitle>
             <ItemDescription
               className={`font-mono
-                truncate text-[10px] leading-tight
+                text-[10px] leading-tight
                 transition-colors duration-200
                 ${activeState ? 'text-foreground' : 'text-muted-foreground/70'}
               `}
-              title={primaryPane?.cwd}
+              title={gitInfo?.isRepo ? `${gitInfo.repoName}:${gitInfo.branch}` : primaryPane?.cwd}
             >
-              {shortPath}
+              {gitInfo?.isRepo ? (
+                <span className="flex items-center gap-1 truncate">
+                  <GitBranch className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{gitInfo.repoName}:{gitInfo.branch}</span>
+                </span>
+              ) : (
+                shortPath
+              )}
             </ItemDescription>
           </ItemContent>
 

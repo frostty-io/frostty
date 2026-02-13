@@ -6,6 +6,7 @@ import {
   PtyExitEvent,
   PtyCwdEvent,
   SystemStats,
+  GitRepoInfoResult,
   GitStatus,
   GitBranch,
   GitOperationResult,
@@ -97,6 +98,10 @@ const electronAPI: ElectronAPI = {
   },
 
   // Git APIs
+  gitRepoInfo: async (cwd: string): Promise<GitRepoInfoResult> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.GIT_REPO_INFO, cwd)
+  },
+
   gitStatus: async (cwd: string): Promise<GitStatus> => {
     return ipcRenderer.invoke(IPC_CHANNELS.GIT_STATUS, cwd)
   },

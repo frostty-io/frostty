@@ -7,6 +7,7 @@ import { join, basename } from 'path'
 import { ipcMain } from 'electron'
 import {
   IPC_CHANNELS,
+  GitRepoInfoResult,
   GitStatus,
   GitBranch,
   GitOperationResult,
@@ -47,6 +48,21 @@ function parseGitStatusCode(code: string): GitFileStatus['status'] {
     case '?': return 'untracked'
     case '!': return 'ignored'
     default: return 'modified'
+  }
+}
+
+// ── Lightweight repo info (for tab display) ─────────────────────────────────
+
+async function getGitRepoInfo(cwd: string): Promise<GitRepoInfoResult> {
+  const notRepo: GitRepoInfoResult = { isRepo: false, repoName: '', branch: '' }
+  try {
+    const { stdout: toplevel } = await runGitCommand(cwd, 'rev-parse --show-toplevel')
+    const repoName = basename(toplevel.trim())
+    const { stdout: branchOutput } = await runGitCommand(cwd, 'branch --show-current')
+    const branch = branchOutput.trim() || 'HEAD'
+    return { isRepo: true, repoName, branch }
+  } catch {
+    return notRepo
   }
 }
 
@@ -378,6 +394,10 @@ async function scanGitRepos(baseDir: string): Promise<GitRepoInfo[]> {
 // ── IPC registration ─────────────────────────────────────────────────────────
 
 export function registerGitHandlers(): void {
+  ipcMain.handle(IPC_CHANNELS.GIT_REPO_INFO, (_event, cwd: string) => {
+    return getGitRepoInfo(cwd)
+  })
+
   ipcMain.handle(IPC_CHANNELS.GIT_STATUS, (_event, cwd: string) => {
     return getGitStatus(cwd)
   })
