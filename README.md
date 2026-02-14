@@ -19,6 +19,8 @@
   <a href="#roadmap">Roadmap</a>
 </p>
 
+<img src="./resources/screenshot.png" alt="Demo" width="100%" />
+
 ## About
 
 Doggo is a GPU-accelerated terminal emulator. It provides a vertical tab layout, split panes, deep git integration and AI-powered command generation.
@@ -112,7 +114,7 @@ Run this only when `resources/doggo.png` changes. Generated icons in `build/` ar
 
 ## Releases
 
-- Stable releases are created by release-please and use tags like `v1.2.3`.
+- Stable releases are created by release-please and use tags like `v0.1.3`.
 - Version bumps follow Conventional Commits in PR titles or squash commit messages:
   - `fix:` -> patch
   - `feat:` -> minor
@@ -122,9 +124,6 @@ Run this only when `resources/doggo.png` changes. Generated icons in `build/` ar
 - Canary builds do not modify `package.json` version.
 - Stable and canary macOS artifacts are code-signed in CI using Apple Developer credentials.
 - Stable `v*` releases are notarized by default.
-- Canary notarization is optional via manual dispatch input `enable_notarization` (default: off).
-- Required GitHub secrets for signing: `APPLE_SIGNING_CERT`, `APPLE_SIGNING_CERT_PASSWORD`, `APPLE_SIGNING_IDENTITY`.
-- Required GitHub secrets for notarization: `APPLE_NOTARY_APPLE_ID`, `APPLE_NOTARY_APP_PASSWORD`, `APPLE_NOTARY_TEAM_ID`.
 - Build metadata (commit SHA and build date) is logged at startup and shown in About panel credits.
 
 ## Roadmap
@@ -133,11 +132,10 @@ The high-level plan for the project, roughly in priority order:
 
 |  #  | Feature | Status |
 | :-: | :--- | :---: |
-| 1 | Multi-window support | Planned |
+| 1 | Font ligatures ([xterm-addon-ligatures](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures)) | Planned |
 | 2 | Theming support | Planned |
-| 3 | Font ligatures ([xterm-addon-ligatures](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures)) | Planned |
-| 4 | Hotkey remapping settings | Planned |
-| 5 | Kitty graphics protocol | Blocked ([xtermjs#5592](https://github.com/xtermjs/xterm.js/issues/5592)) |
+| 3 | Hotkey remapping settings | Planned |
+| 4 | Kitty graphics protocol | Blocked ([xtermjs#5592](https://github.com/xtermjs/xterm.js/issues/5592)) |
 
 ## License
 
