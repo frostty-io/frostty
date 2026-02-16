@@ -8,7 +8,6 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { useAIMode } from './useAIMode'
 import { TERMINAL_SCROLLBACK, TERMINAL_FIT_DELAY } from '../../../shared/constants'
-import { getTerminalFontFamily, resolvePreferredTerminalFontFamily } from '../lib/terminal-fonts'
 // Import to ensure global Window type declarations are loaded
 import '../../../shared/ipc'
 import type { ShellType } from '../../../shared/ipc'
@@ -102,8 +101,7 @@ export function useTerminalCore({
         cursorBlink: true,
         cursorStyle: 'block',
         fontSize: 12,
-        fontFamily:
-          '"MesloLGM Nerd Font Mono", "MesloLGL Nerd Font Mono", "MesloLGS Nerd Font Mono", "JetBrainsMono Nerd Font Mono", "FiraCode Nerd Font Mono", Menlo, Monaco, "Courier New", monospace',
+        fontFamily: 'Doggo Terminal Nerd Mono',
         lineHeight: 1.2,
         scrollback: TERMINAL_SCROLLBACK,
         allowProposedApi: true,

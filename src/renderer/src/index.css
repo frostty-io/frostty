@@ -1,6 +1,38 @@
 @import "tailwindcss";
 @config "../../../tailwind.config.js";
 
+@font-face {
+  font-family: "Doggo Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Doggo Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Doggo Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Doggo Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-BoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     /* Modern Dark Theme - Always Dark */
