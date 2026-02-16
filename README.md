@@ -132,10 +132,9 @@ The high-level plan for the project, roughly in priority order:
 
 |  #  | Feature | Status |
 | :-: | :--- | :---: |
-| 1 | Font ligatures ([xterm-addon-ligatures](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures)) | Planned |
-| 2 | Theming support | Planned |
-| 3 | Hotkey remapping settings | Planned |
-| 4 | Kitty graphics protocol | Blocked ([xtermjs#5592](https://github.com/xtermjs/xterm.js/issues/5592)) |
+| 1 | Theming support | Planned |
+| 2 | Hotkey remapping settings | Planned |
+| 3 | Kitty graphics protocol | Blocked ([xtermjs#5592](https://github.com/xtermjs/xterm.js/issues/5592)) |
 
 ## License
 

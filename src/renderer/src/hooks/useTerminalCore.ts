@@ -1,12 +1,14 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { LigaturesAddon } from '@xterm/addon-ligatures'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { useAIMode } from './useAIMode'
 import { TERMINAL_SCROLLBACK, TERMINAL_FIT_DELAY } from '../../../shared/constants'
+import { getTerminalFontFamily, resolvePreferredTerminalFontFamily } from '../lib/terminal-fonts'
 // Import to ensure global Window type declarations are loaded
 import '../../../shared/ipc'
 import type { ShellType } from '../../../shared/ipc'
@@ -105,6 +107,8 @@ export function useTerminalCore({
         lineHeight: 1.2,
         scrollback: TERMINAL_SCROLLBACK,
         allowProposedApi: true,
+        customGlyphs: true,
+        rescaleOverlappingGlyphs: true,
 
         theme: {
           background: '#1a1b26',
@@ -143,6 +147,10 @@ export function useTerminalCore({
       const unicode11Addon = new Unicode11Addon()
       terminal.loadAddon(unicode11Addon)
       terminal.unicode.activeVersion = '11'
+
+      // Load ligatures addon so supported fonts can render ligatures correctly
+      const ligaturesAddon = new LigaturesAddon()
+      terminal.loadAddon(ligaturesAddon)
 
       // Load WebLinks addon to make URLs clickable
       const webLinksAddon = new WebLinksAddon()
