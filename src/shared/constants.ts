@@ -40,6 +40,26 @@ export const GIT_MAX_BUFFER = 1024 * 1024 * 10
 /** Maximum scrollback lines for xterm */
 export const TERMINAL_SCROLLBACK = 10000
 
+/** Default terminal shell font size */
+export const TERMINAL_FONT_SIZE_DEFAULT = 12
+
+/** Minimum terminal shell font size */
+export const TERMINAL_FONT_SIZE_MIN = 8
+
+/** Maximum terminal shell font size */
+export const TERMINAL_FONT_SIZE_MAX = 32
+
+/** Terminal shell font size zoom step */
+export const TERMINAL_FONT_SIZE_STEP = 1
+
+/** Clamp a shell font size to the supported range */
+export function clampShellFontSize(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(parsed)) return TERMINAL_FONT_SIZE_DEFAULT
+  const rounded = Math.round(parsed)
+  return Math.min(TERMINAL_FONT_SIZE_MAX, Math.max(TERMINAL_FONT_SIZE_MIN, rounded))
+}
+
 /** Maximum recent items to keep */
 export const MAX_RECENT_ITEMS = 3
 

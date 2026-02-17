@@ -1,8 +1,9 @@
 import { app } from 'electron'
 import * as path from 'path'
 import { readFile, writeFile, access } from 'fs/promises'
-import type { AppSettings, Recents, Profile, ShellType } from '../shared/ipc'
+import type { AppSettings, Recents } from '../shared/ipc'
 import { DEFAULT_SETTINGS, DEFAULT_PROFILE, MAX_RECENT_ITEMS } from '../shared/ipc'
+import { clampShellFontSize } from '../shared/constants'
 
 const SETTINGS_FILE = 'settings.json'
 const RECENTS_FILE = 'recents.json'
@@ -12,14 +13,6 @@ function getFilePath(filename: string): string {
 }
 
 // ── Settings ────────────────────────────────────────────────────────────────
-
-// Legacy settings shape (pre-profiles) for migration detection
-interface LegacyAppSettings {
-  defaultHomeDirectory?: string
-  defaultShell?: ShellType
-  openRouterApiKey?: string
-  openRouterModel?: string
-}
 
 export async function loadSettingsFromDisk(): Promise<AppSettings> {
   try {
@@ -32,34 +25,18 @@ export async function loadSettingsFromDisk(): Promise<AppSettings> {
     }
 
     const raw = await readFile(filePath, 'utf-8')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parsed = JSON.parse(raw) as any
+    const parsed = JSON.parse(raw) as Partial<AppSettings> & { profiles?: unknown }
+    const parsedProfiles = Array.isArray(parsed.profiles) ? parsed.profiles : []
 
-    // Detect old format: has defaultShell/defaultHomeDirectory but no profiles array
-    if (!Array.isArray(parsed.profiles)) {
-      const legacy = parsed as LegacyAppSettings
-      const migratedProfile: Profile = {
-        id: 'default',
-        name: 'Default',
-        shell: legacy.defaultShell ?? DEFAULT_PROFILE.shell,
-        homeDirectory: legacy.defaultHomeDirectory ?? DEFAULT_PROFILE.homeDirectory,
-        tabColor: DEFAULT_PROFILE.tabColor
-      }
-      const migrated: AppSettings = {
-        profiles: [migratedProfile],
-        defaultProfileId: 'default',
-        openRouterApiKey: legacy.openRouterApiKey ?? DEFAULT_SETTINGS.openRouterApiKey,
-        openRouterModel: legacy.openRouterModel ?? DEFAULT_SETTINGS.openRouterModel
-      }
-      // Write migrated settings back to disk immediately
-      await saveSettingsToDisk(migrated)
-      return migrated
-    }
-
-    // New format — load with defaults
     const settings: AppSettings = {
-      profiles: parsed.profiles.length > 0
-        ? parsed.profiles.map((p: Record<string, unknown>) => ({ ...DEFAULT_PROFILE, ...p }))
+      profiles: parsedProfiles.length > 0
+        ? parsedProfiles.map((p) => ({
+          ...DEFAULT_PROFILE,
+          ...(typeof p === 'object' && p !== null ? p : {}),
+          shellFontSize: clampShellFontSize(
+            typeof p === 'object' && p !== null ? (p as { shellFontSize?: unknown }).shellFontSize : undefined
+          )
+        }))
         : [...DEFAULT_SETTINGS.profiles],
       defaultProfileId: parsed.defaultProfileId ?? DEFAULT_SETTINGS.defaultProfileId,
       openRouterApiKey: parsed.openRouterApiKey ?? DEFAULT_SETTINGS.openRouterApiKey,

@@ -14,7 +14,12 @@ import { useUIStore } from './stores/useUIStore'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useSplitPane } from './hooks/useSplitPane'
 import { useDragAndDrop } from './hooks/useDragAndDrop'
-import { SPLIT_PANE_DEFAULT_PCT, CWD_POLL_INTERVAL, INITIAL_CWD_DELAY } from '../../shared/constants'
+import {
+  clampShellFontSize,
+  SPLIT_PANE_DEFAULT_PCT,
+  CWD_POLL_INTERVAL,
+  INITIAL_CWD_DELAY
+} from '../../shared/constants'
 import type { Pane, TabEntry, WindowSession } from '../../shared/ipc'
 // Import to ensure global Window type declarations are loaded
 import '../../shared/ipc'
@@ -267,31 +272,36 @@ export default function App() {
   }
 
   // --- Terminal renderer ---
-  const renderTerminal = (tab: TabEntry, pane: Pane, isPaneActive: boolean) => (
-    <Terminal
-      ref={(handle: TerminalHandle | null) => {
-        useTabStore.getState().setTerminalRef(pane.id, handle)
-      }}
-      key={pane.id}
-      tabId={pane.id}
-      isActive={tab.id === activeTabId && isPaneActive}
-      modalOpen={modalOpen}
-      initialCwd={pane.cwd}
-      initialContent={initialContentMap.get(pane.id)}
-      shell={pane.shellType ?? getProfile(pane.profileId).shell}
-      onShellReady={(shell) => {
-        useTabStore.getState().updatePaneShell(pane.id, shell)
-      }}
-      onFocus={() => {
-        if (tab.type === 'split') {
-          useTabStore.getState().setActivePaneInTab(tab.id, pane.id)
-        }
-      }}
-      openRouterApiKey={settings.openRouterApiKey}
-      openRouterModel={settings.openRouterModel}
-      currentCwd={pane.cwd}
-    />
-  )
+  const renderTerminal = (tab: TabEntry, pane: Pane, isPaneActive: boolean) => {
+    const profile = getProfile(pane.profileId)
+
+    return (
+      <Terminal
+        ref={(handle: TerminalHandle | null) => {
+          useTabStore.getState().setTerminalRef(pane.id, handle)
+        }}
+        key={pane.id}
+        tabId={pane.id}
+        isActive={tab.id === activeTabId && isPaneActive}
+        fontSize={clampShellFontSize(profile.shellFontSize)}
+        modalOpen={modalOpen}
+        initialCwd={pane.cwd}
+        initialContent={initialContentMap.get(pane.id)}
+        shell={pane.shellType ?? profile.shell}
+        onShellReady={(shell) => {
+          useTabStore.getState().updatePaneShell(pane.id, shell)
+        }}
+        onFocus={() => {
+          if (tab.type === 'split') {
+            useTabStore.getState().setActivePaneInTab(tab.id, pane.id)
+          }
+        }}
+        openRouterApiKey={settings.openRouterApiKey}
+        openRouterModel={settings.openRouterModel}
+        currentCwd={pane.cwd}
+      />
+    )
+  }
 
   // --- Drag-related computed values ---
   const draggedTab = activeDragId ? tabs.find((t) => t.id === activeDragId) : null

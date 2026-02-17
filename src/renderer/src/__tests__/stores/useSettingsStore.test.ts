@@ -8,8 +8,8 @@ describe('useSettingsStore', () => {
       settings: {
         ...DEFAULT_SETTINGS,
         profiles: [
-          { id: 'default', name: 'Default', shell: 'system', homeDirectory: '~', tabColor: '#3b82f6' },
-          { id: 'work', name: 'Work', shell: 'zsh', homeDirectory: '~/work', tabColor: '#ef4444' }
+          { id: 'default', name: 'Default', shell: 'system', homeDirectory: '~', tabColor: '#3b82f6', shellFontSize: 12 },
+          { id: 'work', name: 'Work', shell: 'zsh', homeDirectory: '~/work', tabColor: '#ef4444', shellFontSize: 13 }
         ]
       },
       settingsLoaded: true,
@@ -51,7 +51,8 @@ describe('useSettingsStore', () => {
         name: 'Work Updated',
         shell: 'bash',
         homeDirectory: '~/work',
-        tabColor: '#22c55e'
+        tabColor: '#22c55e',
+        shellFontSize: 14
       })
 
       const profile = useSettingsStore.getState().settings.profiles.find((p) => p.id === 'work')
@@ -67,7 +68,8 @@ describe('useSettingsStore', () => {
         name: 'New Profile',
         shell: 'fish',
         homeDirectory: '~/new',
-        tabColor: '#06b6d4'
+        tabColor: '#06b6d4',
+        shellFontSize: 12
       })
 
       const profiles = useSettingsStore.getState().settings.profiles

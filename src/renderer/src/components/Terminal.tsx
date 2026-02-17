@@ -6,6 +6,7 @@ import type { ShellType } from '../../../shared/ipc'
 interface TerminalProps {
   tabId: string
   isActive: boolean
+  fontSize: number
   modalOpen?: boolean
   initialCwd?: string
   initialContent?: string
@@ -25,12 +26,26 @@ export interface TerminalHandle {
 }
 
 const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Terminal(
-  { tabId, isActive, modalOpen, initialCwd, initialContent, shell, onShellReady, onFocus, openRouterApiKey, openRouterModel, currentCwd },
+  {
+    tabId,
+    isActive,
+    fontSize,
+    modalOpen,
+    initialCwd,
+    initialContent,
+    shell,
+    onShellReady,
+    onFocus,
+    openRouterApiKey,
+    openRouterModel,
+    currentCwd
+  },
   ref
 ) {
   const { setContainerRef, enterAIMode, serialize, clear } = useTerminalCore({
     tabId,
     isActive,
+    fontSize,
     modalOpen,
     initialCwd,
     initialContent,

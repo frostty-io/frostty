@@ -7,7 +7,11 @@ import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { useAIMode } from './useAIMode'
-import { TERMINAL_SCROLLBACK, TERMINAL_FIT_DELAY } from '../../../shared/constants'
+import {
+  TERMINAL_SCROLLBACK,
+  TERMINAL_FIT_DELAY,
+  TERMINAL_FONT_SIZE_DEFAULT
+} from '../../../shared/constants'
 // Import to ensure global Window type declarations are loaded
 import '../../../shared/ipc'
 import type { ShellType } from '../../../shared/ipc'
@@ -15,6 +19,7 @@ import type { ShellType } from '../../../shared/ipc'
 interface UseTerminalCoreOptions {
   tabId: string
   isActive: boolean
+  fontSize?: number
   modalOpen?: boolean
   initialCwd?: string
   initialContent?: string
@@ -48,6 +53,7 @@ function safeDisposeWebglAddon(addon: WebglAddon | null): void {
 export function useTerminalCore({
   tabId,
   isActive,
+  fontSize = TERMINAL_FONT_SIZE_DEFAULT,
   modalOpen,
   initialCwd,
   initialContent,
@@ -69,6 +75,7 @@ export function useTerminalCore({
   const initialContentRef = useRef(initialContent)
   const shellRef = useRef(shell)
   const onShellReadyRef = useRef(onShellReady)
+  const fontSizeRef = useRef(fontSize)
 
   // Keep refs updated
   tabIdRef.current = tabId
@@ -76,6 +83,7 @@ export function useTerminalCore({
   initialCwdRef.current = initialCwd
   shellRef.current = shell
   onShellReadyRef.current = onShellReady
+  fontSizeRef.current = fontSize
 
   // AI mode hook
   const { enterAIMode, handleAIInput, aiStateRef } = useAIMode({
@@ -100,7 +108,7 @@ export function useTerminalCore({
       const terminal = new Terminal({
         cursorBlink: true,
         cursorStyle: 'block',
-        fontSize: 12,
+        fontSize: fontSizeRef.current,
         fontFamily: 'Doggo Terminal Nerd Mono',
         lineHeight: 1.2,
         scrollback: TERMINAL_SCROLLBACK,
@@ -261,6 +269,19 @@ export function useTerminalCore({
       }, 50)
     }
   }, [isActive, modalOpen, tabId])
+
+  // Apply runtime font-size changes to shell text only.
+  useEffect(() => {
+    if (!terminalRef.current || !fitAddonRef.current || isDisposedRef.current) return
+    if (terminalRef.current.options.fontSize === fontSize) return
+
+    terminalRef.current.options.fontSize = fontSize
+    fitAddonRef.current.fit()
+    const { cols, rows } = terminalRef.current
+    if (cols > 0 && rows > 0) {
+      window.electronAPI.resizePty(tabIdRef.current, cols, rows)
+    }
+  }, [fontSize])
 
   // Set up resize observer (150ms trailing debounce to coalesce rapid resize events)
   const resizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)

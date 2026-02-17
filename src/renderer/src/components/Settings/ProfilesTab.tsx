@@ -4,6 +4,7 @@ import { User, Plus } from 'lucide-react'
 import { Button } from '../ui/button'
 import type { AppSettings, AvailableShell, Profile } from '../../../../shared/ipc'
 import { ProfileEditor, generateProfileId } from './ProfileEditor'
+import { TERMINAL_FONT_SIZE_DEFAULT } from '../../../../shared/constants'
 
 interface ProfilesTabProps {
   settings: AppSettings
@@ -44,7 +45,8 @@ export function ProfilesTab({ settings, onSave }: ProfilesTabProps) {
       name: 'New Profile',
       shell: 'system',
       homeDirectory: '~',
-      tabColor: '#3b82f6'
+      tabColor: '#3b82f6',
+      shellFontSize: TERMINAL_FONT_SIZE_DEFAULT
     }
     update({ profiles: [...settings.profiles, newProfile] })
     setSelectedProfileId(newProfile.id)
@@ -56,7 +58,8 @@ export function ProfilesTab({ settings, onSave }: ProfilesTabProps) {
       name: `${profile.name} (copy)`,
       shell: profile.shell,
       homeDirectory: profile.homeDirectory,
-      tabColor: profile.tabColor
+      tabColor: profile.tabColor,
+      shellFontSize: profile.shellFontSize
     }
     const idx = settings.profiles.findIndex(p => p.id === profile.id)
     const newProfiles = [...settings.profiles]

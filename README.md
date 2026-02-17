@@ -56,6 +56,9 @@ Doggo ships with a broad set of features out of the box:
 | Cmd/Ctrl + Shift + N | New window |
 | Cmd/Ctrl + Shift + T | Restore closed tab |
 | Cmd/Ctrl + D | Split / unsplit pane |
+| Cmd/Ctrl + = or + | Zoom in shell text |
+| Cmd/Ctrl + - | Zoom out shell text |
+| Cmd/Ctrl + 0 | Reset shell text zoom |
 | Cmd/Ctrl + Up/Down | Navigate panes or tabs |
 | Cmd/Ctrl + 1-9 | Switch to tab by index |
 | Cmd/Ctrl + Shift + P | Command palette |

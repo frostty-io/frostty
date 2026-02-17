@@ -36,7 +36,7 @@ const mockElectronAPI = {
   saveWindowSession: vi.fn(),
   onSessionRequestSave: vi.fn().mockReturnValue(() => {}),
   loadSettings: vi.fn().mockResolvedValue({
-    profiles: [{ id: 'default', name: 'Default', shell: 'system', homeDirectory: '~', tabColor: '#3b82f6' }],
+    profiles: [{ id: 'default', name: 'Default', shell: 'system', homeDirectory: '~', tabColor: '#3b82f6', shellFontSize: 12 }],
     defaultProfileId: 'default',
     openRouterApiKey: '',
     openRouterModel: 'openai/gpt-oss-120b'
@@ -45,7 +45,10 @@ const mockElectronAPI = {
   loadRecents: vi.fn().mockResolvedValue({ recentCommands: [], recentProjects: [] }),
   saveRecentCommand: vi.fn().mockResolvedValue(undefined),
   saveRecentProject: vi.fn().mockResolvedValue(undefined),
-  newWindow: vi.fn()
+  newWindow: vi.fn(),
+  closeWindow: vi.fn(),
+  setWindowTitle: vi.fn(),
+  restoreLastWindow: vi.fn()
 }
 
 Object.defineProperty(window, 'electronAPI', {

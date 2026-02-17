@@ -2,6 +2,11 @@ import { useEffect } from 'react'
 import { useTabStore, createPane } from '../stores/useTabStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useUIStore } from '../stores/useUIStore'
+import {
+  clampShellFontSize,
+  TERMINAL_FONT_SIZE_DEFAULT,
+  TERMINAL_FONT_SIZE_STEP
+} from '../../../shared/constants'
 
 /**
  * Global keyboard shortcuts for the application.
@@ -17,6 +22,32 @@ export function useKeyboardShortcuts() {
       const tabStore = useTabStore.getState()
       const settingsStore = useSettingsStore.getState()
       const uiStore = useUIStore.getState()
+
+      const activePane = tabStore.getActivePane()
+      const targetProfile = settingsStore.getProfile(activePane?.profileId)
+      const currentShellFontSize = clampShellFontSize(targetProfile.shellFontSize)
+      const isZoomIn = key === '=' || key === '+' || e.code === 'NumpadAdd'
+      const isZoomOut = key === '-' || key === '_' || e.code === 'NumpadSubtract'
+      const isZoomReset = key === '0' || e.code === 'Numpad0'
+
+      // Shell text zoom shortcuts (prevent browser-level zoom)
+      if (isZoomIn || isZoomOut || isZoomReset) {
+        e.preventDefault()
+
+        const nextShellFontSize = isZoomReset
+          ? TERMINAL_FONT_SIZE_DEFAULT
+          : clampShellFontSize(
+            currentShellFontSize + (isZoomIn ? TERMINAL_FONT_SIZE_STEP : -TERMINAL_FONT_SIZE_STEP)
+          )
+
+        if (nextShellFontSize !== currentShellFontSize) {
+          settingsStore.updateProfile({
+            ...targetProfile,
+            shellFontSize: nextShellFontSize
+          })
+        }
+        return
+      }
 
       // Mod+Shift combos
       if (shift) {

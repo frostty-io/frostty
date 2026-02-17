@@ -1,3 +1,5 @@
+import { TERMINAL_FONT_SIZE_DEFAULT } from './constants'
+
 // Supported shell types
 export type ShellType = 'system' | 'zsh' | 'bash' | 'fish'
 
@@ -201,6 +203,7 @@ export interface Profile {
   shell: ShellType     // 'system' | 'zsh' | 'bash' | 'fish'
   homeDirectory: string // e.g., '~', '/srv/myproject'
   tabColor: string     // CSS color for the tab border, e.g. '#3b82f6'
+  shellFontSize: number
 }
 
 export const DEFAULT_PROFILE: Profile = {
@@ -208,7 +211,8 @@ export const DEFAULT_PROFILE: Profile = {
   name: 'Default',
   shell: 'system',
   homeDirectory: '~',
-  tabColor: '#3b82f6'
+  tabColor: '#3b82f6',
+  shellFontSize: TERMINAL_FONT_SIZE_DEFAULT
 }
 
 // App settings types

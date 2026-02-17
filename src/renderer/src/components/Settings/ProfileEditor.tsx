@@ -19,8 +19,18 @@ import {
 } from '../ui/dropdown-menu'
 import { SHELL_OPTIONS, normalizeHomeDirectory } from '../../../../shared/ipc'
 import type { ShellType, AvailableShell, Profile } from '../../../../shared/ipc'
+import {
+  clampShellFontSize,
+  TERMINAL_FONT_SIZE_MAX,
+  TERMINAL_FONT_SIZE_MIN
+} from '../../../../shared/constants'
 import { SettingField, INPUT_CLASSES } from './SettingField'
 import { TabColorPicker } from './TabColorPicker'
+
+const FONT_SIZE_OPTIONS = Array.from(
+  { length: TERMINAL_FONT_SIZE_MAX - TERMINAL_FONT_SIZE_MIN + 1 },
+  (_unused, index) => TERMINAL_FONT_SIZE_MIN + index
+)
 
 // Generate a unique profile ID
 export function generateProfileId(): string {
@@ -209,6 +219,47 @@ export function ProfileEditor({
             Browse
           </Button>
         </div>
+      </SettingField>
+
+      {/* Font Size */}
+      <SettingField
+        label="Shell Font Size"
+        description={`Text size for terminals opened with this profile (${TERMINAL_FONT_SIZE_MIN}-${TERMINAL_FONT_SIZE_MAX}px).`}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-between bg-popover border-[hsl(220,15%,20%)] hover:bg-popover hover:border-[hsl(220,15%,28%)]"
+            >
+              <span className="text-foreground">{clampShellFontSize(profile.shellFontSize)} px</span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="min-w-(--radix-dropdown-menu-trigger-width)"
+          >
+            {FONT_SIZE_OPTIONS.map((size) => {
+              const isSelected = clampShellFontSize(profile.shellFontSize) === size
+              return (
+                <DropdownMenuItem
+                  key={size}
+                  onClick={() => onUpdate({ ...profile, shellFontSize: size })}
+                  className={cn(
+                    'gap-3 py-2 cursor-pointer',
+                    isSelected && 'bg-accent/10'
+                  )}
+                >
+                  <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                    {isSelected && <Check className="w-4 h-4 text-accent" />}
+                  </div>
+                  <span className="text-sm text-foreground">{size}px</span>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SettingField>
 
       {/* Tab Color */}
