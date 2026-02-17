@@ -90,7 +90,7 @@ export async function generateCommand(request: AIGenerateCommandRequest): Promis
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://frostty.sh',
+        'HTTP-Referer': 'https://frostty.io',
         'X-Title': 'Frostty'
       },
       body: JSON.stringify(requestBody)
