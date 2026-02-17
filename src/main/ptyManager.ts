@@ -106,11 +106,11 @@ function initShellIntegration(): string {
 
   // .zshenv is sourced first, before .zshrc
   // We set up OSC 7 here and source the user's real config
-  const zshEnv = `# Doggo shell integration
+  const zshEnv = `# Frostty shell integration
 # Set up OSC 7 directory reporting
-__doggo_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD" }
-autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook chpwd __doggo_osc7
-autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook precmd __doggo_osc7
+__frostty_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD" }
+autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook chpwd __frostty_osc7
+autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook precmd __frostty_osc7
 
 # Restore ZDOTDIR and source user's zsh config
 export ZDOTDIR="$HOME"
@@ -119,18 +119,18 @@ export ZDOTDIR="$HOME"
   fs.writeFileSync(path.join(zshDir, '.zshenv'), zshEnv)
 
   // .zshrc sources user's real .zshrc
-  const zshRc = `# Doggo: source user's zshrc
+  const zshRc = `# Frostty: source user's zshrc
 [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
 # Emit initial OSC 7
-__doggo_osc7
+__frostty_osc7
 `
   fs.writeFileSync(path.join(zshDir, '.zshrc'), zshRc)
 
   // Bash integration script (sourced via BASH_ENV)
-  const bashInit = `# Doggo shell integration
-__doggo_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD"; }
-PROMPT_COMMAND="__doggo_osc7\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
-__doggo_osc7
+  const bashInit = `# Frostty shell integration
+__frostty_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD"; }
+PROMPT_COMMAND="__frostty_osc7\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
+__frostty_osc7
 `
   fs.writeFileSync(path.join(shellIntegrationDir, 'bash_init.sh'), bashInit)
 
@@ -142,16 +142,16 @@ __doggo_osc7
   }
 
   // Fish config that sources user config and sets up OSC 7
-  const fishConfig = `# Doggo fish shell integration
+  const fishConfig = `# Frostty fish shell integration
 # Emit OSC 7 for directory tracking
-function __doggo_osc7 --on-variable PWD --description 'Emit OSC 7 escape sequence'
+function __frostty_osc7 --on-variable PWD --description 'Emit OSC 7 escape sequence'
     printf '\\e]7;file://${hostname}%s\\a' "$PWD"
 end
 
 # Emit initial OSC 7
-__doggo_osc7
+__frostty_osc7
 `
-  fs.writeFileSync(path.join(fishConfDir, 'doggo.fish'), fishConfig)
+  fs.writeFileSync(path.join(fishConfDir, 'frostty.fish'), fishConfig)
 
   return shellIntegrationDir
 }
@@ -341,7 +341,7 @@ export async function spawnPty(tabId: string, window: BrowserWindow, requestedCw
 
   const env: { [key: string]: string } = {
     ...shellEnv,
-    DOGGO: '1',
+    FROSTTY: '1',
     COLORTERM: 'truecolor',
     // Ensure UTF-8 locale for correct Unicode character width calculations
     // Without this, apps launched from Dock/Finder use C locale and wcwidth()
@@ -360,7 +360,7 @@ export async function spawnPty(tabId: string, window: BrowserWindow, requestedCw
     // For bash, use --rcfile to source our integration script
     const bashRcFile = path.join(integrationDir, 'bash_init.sh')
     // Create a combined rcfile that sources both our init and user's bashrc
-    const combinedBashRc = `# Doggo bash integration
+    const combinedBashRc = `# Frostty bash integration
 source "${bashRcFile}"
 [[ -f "$HOME/.bashrc" ]] && source "$HOME/.bashrc"
 `
@@ -369,22 +369,22 @@ source "${bashRcFile}"
     args = ['--rcfile', combinedRcPath]
   } else if (shellName === 'fish') {
     // For fish, use XDG_CONFIG_HOME to point to our config directory
-    // Fish will source conf.d/doggo.fish automatically
+    // Fish will source conf.d/frostty.fish automatically
     const fishConfigDir = path.join(integrationDir, 'fish')
     env.XDG_CONFIG_HOME = integrationDir
     // Also copy any existing fish config
     const userFishConfig = path.join(homeDir, '.config', 'fish', 'config.fish')
-    const doggoFishConfig = path.join(fishConfigDir, 'config.fish')
-    if (fs.existsSync(userFishConfig) && !fs.existsSync(doggoFishConfig)) {
+    const frosttyFishConfig = path.join(fishConfigDir, 'config.fish')
+    if (fs.existsSync(userFishConfig) && !fs.existsSync(frosttyFishConfig)) {
       try {
         // Create a config.fish that sources the user's config
-        const wrapperConfig = `# Doggo fish config wrapper
+        const wrapperConfig = `# Frostty fish config wrapper
 # Source user's fish config
 if test -f "${userFishConfig}"
     source "${userFishConfig}"
 end
 `
-        fs.writeFileSync(doggoFishConfig, wrapperConfig)
+        fs.writeFileSync(frosttyFishConfig, wrapperConfig)
       } catch {
         // Ignore errors
       }

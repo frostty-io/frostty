@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SOURCE_PNG = resolve(__dirname, 'resources/doggo.png');
+const SOURCE_PNG = resolve(__dirname, 'resources/logo.png');
 const BUILD_DIR = resolve(__dirname, 'build');
 
 // Ensure build directory exists

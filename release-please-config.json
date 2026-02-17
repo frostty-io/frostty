@@ -3,7 +3,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "doggo",
+      "package-name": "frostty",
       "include-v-in-tag": true,
       "changelog-path": "CHANGELOG.md"
     }

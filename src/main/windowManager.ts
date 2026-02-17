@@ -51,7 +51,7 @@ export function createWindow(
     minWidth: 600,
     minHeight: 400,
     backgroundColor: '#1a1b26',
-    icon: join(__dirname, '../resources/doggo.png'),
+    icon: join(__dirname, '../resources/logo.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,

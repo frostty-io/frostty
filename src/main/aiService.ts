@@ -90,8 +90,8 @@ export async function generateCommand(request: AIGenerateCommandRequest): Promis
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://doggo.sh',
-        'X-Title': 'Doggo'
+        'HTTP-Referer': 'https://frostty.sh',
+        'X-Title': 'Frostty'
       },
       body: JSON.stringify(requestBody)
     })

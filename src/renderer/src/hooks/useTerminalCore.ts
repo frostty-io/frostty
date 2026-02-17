@@ -36,7 +36,7 @@ const spawnedPtys = new Set<string>()
 
 // Expose cleanup function globally so App can remove PTY from set on tab close
 if (typeof window !== 'undefined') {
-  window.__doggo_cleanup_pty = (tabId: string) => {
+  window.__frostty_cleanup_pty = (tabId: string) => {
     spawnedPtys.delete(tabId)
   }
 }
@@ -109,7 +109,7 @@ export function useTerminalCore({
         cursorBlink: true,
         cursorStyle: 'block',
         fontSize: fontSizeRef.current,
-        fontFamily: 'Doggo Terminal Nerd Mono',
+        fontFamily: 'Frostty Terminal Nerd Mono',
         lineHeight: 1.2,
         scrollback: TERMINAL_SCROLLBACK,
         allowProposedApi: true,

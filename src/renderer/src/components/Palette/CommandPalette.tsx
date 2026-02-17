@@ -125,7 +125,7 @@ export default function CommandPalette({
       {
         id: 'new-window',
         name: 'Window: New Window',
-        description: 'Open a new Doggo window',
+        description: 'Open a new Frostty window',
         icon: AppWindow as LucideIcon,
         shortcut: [modSymbol, '⇧', 'N'],
         action: () => {

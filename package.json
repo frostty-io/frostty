@@ -1,6 +1,6 @@
 {
-  "name": "doggo",
-  "author": "Doggo Contributors",
+  "name": "frostty",
+  "author": "Frostty Contributors",
   "version": "0.1.0",
   "type": "module",
   "description": "Cross-platform terminal emulator with vertical tabs",
@@ -98,8 +98,8 @@
     }
   },
   "build": {
-    "appId": "com.doggo.app",
-    "productName": "Doggo",
+    "appId": "com.frostty.app",
+    "productName": "Frostty",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -146,9 +146,9 @@
       "entitlements": "config/entitlements.mac.plist",
       "entitlementsInherit": "config/entitlements.mac.plist",
       "extendInfo": {
-        "NSDocumentsFolderUsageDescription": "Doggo needs access to your Documents folder to open terminals and scan for projects in this location.",
-        "NSDesktopFolderUsageDescription": "Doggo needs access to your Desktop folder to open terminals and scan for projects in this location.",
-        "NSDownloadsFolderUsageDescription": "Doggo needs access to your Downloads folder to open terminals in this location."
+        "NSDocumentsFolderUsageDescription": "Frostty needs access to your Documents folder to open terminals and scan for projects in this location.",
+        "NSDesktopFolderUsageDescription": "Frostty needs access to your Desktop folder to open terminals and scan for projects in this location.",
+        "NSDownloadsFolderUsageDescription": "Frostty needs access to your Downloads folder to open terminals in this location."
       }
     },
     "dmg": {
@@ -212,7 +212,7 @@
           ]
         }
       ],
-      "maintainer": "Doggo Contributors"
+      "maintainer": "Frostty Contributors"
     }
   }
 }

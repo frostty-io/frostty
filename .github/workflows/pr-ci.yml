@@ -37,8 +37,8 @@ jobs:
 
       - name: Set build metadata
         run: |
-          echo "DOGGO_BUILD_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-          echo "DOGGO_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          echo "FROSTTY_BUILD_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "FROSTTY_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: Lint
         run: pnpm run lint

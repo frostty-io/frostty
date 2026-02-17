@@ -67,8 +67,8 @@ jobs:
 
       - name: Build
         env:
-          DOGGO_BUILD_SHA: ${{ steps.canary_meta.outputs.short_sha }}
-          DOGGO_BUILD_DATE: ${{ steps.canary_meta.outputs.build_date_iso }}
+          FROSTTY_BUILD_SHA: ${{ steps.canary_meta.outputs.short_sha }}
+          FROSTTY_BUILD_DATE: ${{ steps.canary_meta.outputs.build_date_iso }}
         run: pnpm run build
 
       - name: Validate Apple signing secrets

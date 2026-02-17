@@ -10,7 +10,7 @@
 ## App Icons
 
 - Generated platform icon files live in `build/` and are committed to source control.
-- If `resources/doggo.png` changes, run `pnpm run build-icons` and commit updated files in `build/`.
+- If `resources/logo.png` changes, run `pnpm run build-icons` and commit updated files in `build/`.
 
 ## Conventional Commits (Required for Releases)
 

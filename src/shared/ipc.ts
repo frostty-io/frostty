@@ -354,6 +354,6 @@ export interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI: ElectronAPI
-    __doggo_cleanup_pty?: (tabId: string) => void
+    __frostty_cleanup_pty?: (tabId: string) => void
   }
 }

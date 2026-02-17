@@ -231,13 +231,13 @@ export default function App() {
   useEffect(() => {
     const cwd = activePane?.cwd
     if (!cwd) {
-      window.electronAPI.setWindowTitle('Doggo')
+      window.electronAPI.setWindowTitle('Frostty')
       return
     }
     // Extract directory basename for a concise title
     const parts = cwd.replace(/\/$/, '').split('/')
     const dirname = parts[parts.length - 1] || cwd
-    window.electronAPI.setWindowTitle(`${dirname} — Doggo`)
+    window.electronAPI.setWindowTitle(`${dirname} — Frostty`)
   }, [activePane?.cwd])
 
   // --- Event handlers for TabBar ---

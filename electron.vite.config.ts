@@ -3,14 +3,14 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { copyFileSync, mkdirSync, existsSync } from 'fs'
 
-const buildSha = process.env.DOGGO_BUILD_SHA ?? process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'
-const buildDate = process.env.DOGGO_BUILD_DATE ?? new Date().toISOString()
+const buildSha = process.env.FROSTTY_BUILD_SHA ?? process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'
+const buildDate = process.env.FROSTTY_BUILD_DATE ?? new Date().toISOString()
 
 export default defineConfig({
   main: {
     define: {
-      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
-      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
     },
     plugins: [
       externalizeDepsPlugin(),
@@ -24,8 +24,8 @@ export default defineConfig({
           }
 
           // Copy icon file
-          const srcIcon = resolve(__dirname, 'resources/doggo.png')
-          const destIcon = resolve(__dirname, 'out/resources/doggo.png')
+          const srcIcon = resolve(__dirname, 'resources/logo.png')
+          const destIcon = resolve(__dirname, 'out/resources/logo.png')
           if (existsSync(srcIcon)) {
             copyFileSync(srcIcon, destIcon)
           }
@@ -42,8 +42,8 @@ export default defineConfig({
   },
   preload: {
     define: {
-      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
-      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
     },
     plugins: [externalizeDepsPlugin()],
     build: {
@@ -56,8 +56,8 @@ export default defineConfig({
   },
   renderer: {
     define: {
-      __DOGGO_BUILD_SHA__: JSON.stringify(buildSha),
-      __DOGGO_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
     },
     root: 'src/renderer',
     resolve: {

@@ -1,6 +1,6 @@
 <h1 align="center">
-    <img src="./resources/doggo.png" alt="Logo" width="128">
-    <br>Doggo
+    <img src="./resources/logo.png" alt="Logo" width="128">
+    <br>Frostty
 </h1>
 <br />
 <p align="center">
@@ -23,13 +23,13 @@
 
 ## About
 
-Doggo is a GPU-accelerated terminal emulator. It provides a vertical tab layout, split panes, deep git integration and AI-powered command generation.
+Frostty is a GPU-accelerated terminal emulator. It provides a vertical tab layout, split panes, deep git integration and AI-powered command generation.
 
 The goal is a terminal that feels like a modern development tool rather than a legacy utility. Profiles, a command palette, and editor integration (VS Code, Cursor) keep common workflows a keystroke away.
 
 ## Features
 
-Doggo ships with a broad set of features out of the box:
+Frostty ships with a broad set of features out of the box:
 
 | Category | Details |
 | :--- | :--- |
@@ -113,7 +113,7 @@ pnpm run format        # format
 pnpm run build-icons
 ```
 
-Run this only when `resources/doggo.png` changes. Generated icons in `build/` are committed.
+Run this only when `resources/logo.png` changes. Generated icons in `build/` are committed.
 
 ## Releases
 

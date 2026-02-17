@@ -1,6 +1,6 @@
 import { Search, X, ArrowUp, ArrowDown, Settings, FolderGit2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import doggoLogo from '@resources/doggo.png'
+import frosttyLogo from '@resources/logo.png'
 import { usePlatform } from '@/hooks/usePlatform'
 
 interface KeyboardShortcut {
@@ -97,8 +97,8 @@ export default function EmptyState() {
 
           {/* Logo */}
           <img
-            src={doggoLogo}
-            alt="Doggo"
+            src={frosttyLogo}
+            alt="Frostty"
             className="relative w-24 h-24 grayscale opacity-50"
             draggable={false}
           />

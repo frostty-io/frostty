@@ -156,8 +156,8 @@ export const useTabStore = create<TabState>((set, get) => ({
     // Kill all PTYs for this tab
     tab.panes.forEach((pane) => {
       window.electronAPI.killPty(pane.id)
-      if (window.__doggo_cleanup_pty) {
-        window.__doggo_cleanup_pty(pane.id)
+      if (window.__frostty_cleanup_pty) {
+        window.__frostty_cleanup_pty(pane.id)
       }
     })
 
@@ -212,8 +212,8 @@ export const useTabStore = create<TabState>((set, get) => ({
 
     // Kill PTY
     window.electronAPI.killPty(paneId)
-    if (window.__doggo_cleanup_pty) {
-      window.__doggo_cleanup_pty(paneId)
+    if (window.__frostty_cleanup_pty) {
+      window.__frostty_cleanup_pty(paneId)
     }
 
     set((state) => {
@@ -276,8 +276,8 @@ export const useTabStore = create<TabState>((set, get) => ({
     tabs.forEach((tab) => {
       tab.panes.forEach((pane) => {
         window.electronAPI.killPty(pane.id)
-        if (window.__doggo_cleanup_pty) {
-          window.__doggo_cleanup_pty(pane.id)
+        if (window.__frostty_cleanup_pty) {
+          window.__frostty_cleanup_pty(pane.id)
         }
       })
     })

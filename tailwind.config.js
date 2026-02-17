@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Original Doggo colors
+        // Original Frostty colors
         primary: '#1a1b26',
         secondary: '#24283b',
         tertiary: '#1f2335',
