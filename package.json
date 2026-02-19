@@ -1,7 +1,7 @@
 {
   "name": "frostty",
   "author": "Frostty Contributors",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Cross-platform terminal emulator with vertical tabs",
   "main": "./out/main/index.js",
