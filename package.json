@@ -101,7 +101,7 @@
     }
   },
   "build": {
-    "appId": "com.frostty.app",
+    "appId": "io.frostty.app",
     "productName": "Frostty",
     "directories": {
       "output": "dist",
