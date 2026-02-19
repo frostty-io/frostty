@@ -297,6 +297,20 @@ describe('useTabStore', () => {
     })
   })
 
+  describe('setTerminalRef', () => {
+    it('keeps the same map instance when setting an unchanged ref', () => {
+      const ref = { enterAIMode: () => {}, serialize: () => '', clear: () => {} }
+      useTabStore.getState().setTerminalRef('pane-1', ref)
+
+      const before = useTabStore.getState().terminalRefs
+      useTabStore.getState().setTerminalRef('pane-1', ref)
+      const after = useTabStore.getState().terminalRefs
+
+      expect(after).toBe(before)
+      expect(after.get('pane-1')).toBe(ref)
+    })
+  })
+
   describe('serializeForSave', () => {
     it('serializes tabs for session save', () => {
       const pane = createPane('~/test')

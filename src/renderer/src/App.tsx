@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import { DndContext, DragOverlay, closestCenter, useDroppable } from '@dnd-kit/core'
 import { PanelLeft, PanelRight } from 'lucide-react'
 import TabBar, { TabOverlay } from './components/TabBar'
-import Terminal, { type TerminalHandle } from './components/Terminal'
+import Terminal from './components/Terminal'
 import GitBar from './components/GitBar'
 import { CommandPalette, ProjectPalette } from './components/Palette'
 import EmptyState from './components/EmptyState'
@@ -18,6 +18,7 @@ import {
   clampShellFontSize,
   SPLIT_PANE_DEFAULT_PCT,
   CWD_POLL_INTERVAL,
+  CWD_POLL_STALE_MS,
   INITIAL_CWD_DELAY
 } from '../../shared/constants'
 import type { Pane, TabEntry, WindowSession } from '../../shared/ipc'
@@ -95,6 +96,8 @@ export default function App() {
     : null
   const modalOpen = commandPaletteOpen || projectPaletteOpen || settingsOpen
   const getProfile = useSettingsStore.getState().getProfile
+  const paneCwdUpdatedAtRef = useRef<Record<string, number>>({})
+  const cwdPollingInFlightRef = useRef<Set<string>>(new Set())
 
   // Stable style refs to avoid re-creating objects every render (split pane layout)
   const singlePaneStyle = useMemo<React.CSSProperties>(
@@ -140,6 +143,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = window.electronAPI.onPtyCwd((event) => {
       useTabStore.getState().updatePaneCwd(event.tabId, event.cwd)
+      paneCwdUpdatedAtRef.current[event.tabId] = Date.now()
     })
     return unsubscribe
   }, [])
@@ -186,23 +190,41 @@ export default function App() {
   // 6. Slow CWD polling fallback (only active tab's panes to reduce IPC/main work)
   useEffect(() => {
     const pollInterval = setInterval(async () => {
+      if (document.hidden) return
+
       const { tabs: currentTabs, activeTabId: currentActiveId } = useTabStore.getState()
       const activeTab = currentTabs.find((t) => t.id === currentActiveId)
       if (!activeTab) return
+
+      const now = Date.now()
       for (const pane of activeTab.panes) {
+        const lastUpdate = paneCwdUpdatedAtRef.current[pane.id] ?? 0
+        if (lastUpdate > 0 && now - lastUpdate < CWD_POLL_STALE_MS) {
+          continue
+        }
+        if (cwdPollingInFlightRef.current.has(pane.id)) {
+          continue
+        }
+
+        cwdPollingInFlightRef.current.add(pane.id)
         try {
           const cwd = await window.electronAPI.getCwd(pane.id)
           if (cwd && cwd !== pane.cwd) {
             useTabStore.getState().updatePaneCwd(pane.id, cwd)
           }
+          if (cwd) {
+            paneCwdUpdatedAtRef.current[pane.id] = Date.now()
+          }
         } catch {
           // Ignore errors
+        } finally {
+          cwdPollingInFlightRef.current.delete(pane.id)
         }
       }
     }, CWD_POLL_INTERVAL)
 
     return () => clearInterval(pollInterval)
-  }, [tabs, activeTabId])
+  }, [])
 
   // 7. Fetch git repos
   useEffect(() => {
@@ -259,6 +281,7 @@ export default function App() {
         const actualCwd = await window.electronAPI.getCwd(pane.id)
         if (actualCwd) {
           useTabStore.getState().updatePaneCwd(pane.id, actualCwd)
+          paneCwdUpdatedAtRef.current[pane.id] = Date.now()
         }
       } catch {
         // Ignore errors
@@ -277,9 +300,6 @@ export default function App() {
 
     return (
       <Terminal
-        ref={(handle: TerminalHandle | null) => {
-          useTabStore.getState().setTerminalRef(pane.id, handle)
-        }}
         key={pane.id}
         tabId={pane.id}
         isActive={tab.id === activeTabId && isPaneActive}

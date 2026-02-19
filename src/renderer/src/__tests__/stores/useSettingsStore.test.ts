@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { DEFAULT_SETTINGS } from '../../../../shared/ipc'
 
 describe('useSettingsStore', () => {
   beforeEach(() => {
+    vi.mocked(window.electronAPI.saveSettings).mockClear()
     useSettingsStore.setState({
       settings: {
         ...DEFAULT_SETTINGS,
@@ -119,6 +120,23 @@ describe('useSettingsStore', () => {
       expect(settings.openRouterModel).toBe('new-model')
       // Other settings preserved
       expect(settings.profiles).toHaveLength(2)
+    })
+
+    it('does not persist immediately (App-level debounce owns persistence)', () => {
+      useSettingsStore.getState().updateSettings({ openRouterModel: 'model-a' })
+      expect(window.electronAPI.saveSettings).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('setSettings', () => {
+    it('updates store without immediate persistence', () => {
+      const next = {
+        ...useSettingsStore.getState().settings,
+        openRouterApiKey: 'key-123'
+      }
+      useSettingsStore.getState().setSettings(next)
+      expect(useSettingsStore.getState().settings.openRouterApiKey).toBe('key-123')
+      expect(window.electronAPI.saveSettings).not.toHaveBeenCalled()
     })
   })
 })

@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import {
   SYSTEM_STATS_POLL_INTERVAL,
+  SYSTEM_STATS_CACHE_MS,
   GIT_STATUS_POLL_INTERVAL,
+  GIT_REPO_INFO_CACHE_MS,
   CWD_POLL_INTERVAL,
+  CWD_POLL_STALE_MS,
   SESSION_SAVE_TIMEOUT,
   GIT_MAX_BUFFER,
   TERMINAL_SCROLLBACK,
+  REPO_SCAN_CONCURRENCY,
   SPLIT_PANE_MIN_PCT,
   SPLIT_PANE_MAX_PCT,
   SPLIT_PANE_DEFAULT_PCT,
@@ -17,8 +21,11 @@ import {
 describe('shared/constants', () => {
   it('defines polling intervals as positive numbers', () => {
     expect(SYSTEM_STATS_POLL_INTERVAL).toBeGreaterThan(0)
+    expect(SYSTEM_STATS_CACHE_MS).toBeGreaterThan(0)
     expect(GIT_STATUS_POLL_INTERVAL).toBeGreaterThan(0)
+    expect(GIT_REPO_INFO_CACHE_MS).toBeGreaterThan(0)
     expect(CWD_POLL_INTERVAL).toBeGreaterThan(0)
+    expect(CWD_POLL_STALE_MS).toBeGreaterThan(0)
   })
 
   it('defines timeouts as positive numbers', () => {
@@ -43,6 +50,10 @@ describe('shared/constants', () => {
 
   it('defines DnD activation distance', () => {
     expect(DND_ACTIVATION_DISTANCE).toBeGreaterThan(0)
+  })
+
+  it('defines repo scan concurrency as positive', () => {
+    expect(REPO_SCAN_CONCURRENCY).toBeGreaterThan(0)
   })
 
   it('defines AI spinner frames as non-empty array', () => {

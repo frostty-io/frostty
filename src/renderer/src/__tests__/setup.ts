@@ -12,7 +12,9 @@ const mockElectronAPI = {
   pickDirectory: vi.fn().mockResolvedValue(null),
   getAvailableShells: vi.fn().mockResolvedValue([]),
   onPtyData: vi.fn().mockReturnValue(() => {}),
+  onPtyDataForTab: vi.fn().mockReturnValue(() => {}),
   onPtyExit: vi.fn().mockReturnValue(() => {}),
+  onPtyExitForTab: vi.fn().mockReturnValue(() => {}),
   onPtyCwd: vi.fn().mockReturnValue(() => {}),
   gitRepoInfo: vi.fn().mockResolvedValue({ isRepo: false, repoName: '', branch: '' }),
   gitStatus: vi.fn().mockResolvedValue({ isRepo: false, branch: '', upstream: null, ahead: 0, behind: 0, staged: [], unstaged: [], untracked: [], conflicted: [], stashCount: 0 }),
@@ -48,7 +50,10 @@ const mockElectronAPI = {
   newWindow: vi.fn(),
   closeWindow: vi.fn(),
   setWindowTitle: vi.fn(),
-  restoreLastWindow: vi.fn()
+  restoreLastWindow: vi.fn(),
+  onMenuNewTab: vi.fn().mockReturnValue(() => {}),
+  onMenuCloseTab: vi.fn().mockReturnValue(() => {}),
+  onMenuOpenSettings: vi.fn().mockReturnValue(() => {})
 }
 
 Object.defineProperty(window, 'electronAPI', {

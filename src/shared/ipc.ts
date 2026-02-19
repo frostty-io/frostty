@@ -304,7 +304,9 @@ export interface ElectronAPI {
   pickDirectory: () => Promise<string | null>
   getAvailableShells: () => Promise<AvailableShell[]>
   onPtyData: (callback: (event: PtyDataEvent) => void) => () => void
+  onPtyDataForTab: (tabId: string, callback: (event: PtyDataEvent) => void) => () => void
   onPtyExit: (callback: (event: PtyExitEvent) => void) => () => void
+  onPtyExitForTab: (tabId: string, callback: (event: PtyExitEvent) => void) => () => void
   onPtyCwd: (callback: (event: PtyCwdEvent) => void) => () => void
   // Git APIs
   gitRepoInfo: (cwd: string) => Promise<GitRepoInfoResult>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useGitRepoInfo } from '../../hooks/useGitRepoInfo'
+import { useGitRepoInfo, __clearGitRepoInfoCacheForTests } from '../../hooks/useGitRepoInfo'
 import type { GitRepoInfoResult } from '@shared/ipc'
 
 const repoResult: GitRepoInfoResult = {
@@ -25,6 +25,7 @@ async function flushPromises() {
 describe('useGitRepoInfo', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    __clearGitRepoInfoCacheForTests()
     vi.mocked(window.electronAPI.gitRepoInfo).mockReset()
     vi.mocked(window.electronAPI.gitRepoInfo).mockResolvedValue(repoResult)
     Object.defineProperty(document, 'hidden', { value: false, writable: true, configurable: true })

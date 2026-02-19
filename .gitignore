@@ -27,3 +27,6 @@ build/*
 # Vite / Electron caches
 .vite
 .electron-vite
+
+# Test coverage
+coverage

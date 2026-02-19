@@ -5,11 +5,23 @@
 /** How often to poll system stats (CPU/memory) in the TabBar */
 export const SYSTEM_STATS_POLL_INTERVAL = 2000
 
+/** Cache window for system stats in the main process */
+export const SYSTEM_STATS_CACHE_MS = 1500
+
 /** How often to poll git status in the GitBar */
 export const GIT_STATUS_POLL_INTERVAL = 3000
 
+/** Cache window for git repo info lookups in renderer hooks */
+export const GIT_REPO_INFO_CACHE_MS = 5000
+
 /** Fallback CWD poll interval (only used when OSC 7 is unavailable) */
 export const CWD_POLL_INTERVAL = 10000
+
+/** Consider OSC 7 CWD stale after this many ms and allow fallback polling */
+export const CWD_POLL_STALE_MS = 12000
+
+/** Max number of directories to scan concurrently when discovering repos */
+export const REPO_SCAN_CONCURRENCY = 8
 
 // ---------------------------------------------------------------------------
 // Timeouts

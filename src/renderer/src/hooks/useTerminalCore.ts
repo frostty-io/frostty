@@ -237,8 +237,8 @@ export function useTerminalCore({
 
   // Handle PTY data
   useEffect(() => {
-    const unsubscribe = window.electronAPI.onPtyData((event) => {
-      if (event.tabId === tabId && terminalRef.current && !isDisposedRef.current) {
+    const unsubscribe = window.electronAPI.onPtyDataForTab(tabId, (event) => {
+      if (terminalRef.current && !isDisposedRef.current) {
         terminalRef.current.write(event.data)
       }
     })
@@ -247,8 +247,8 @@ export function useTerminalCore({
 
   // Handle PTY exit
   useEffect(() => {
-    const unsubscribe = window.electronAPI.onPtyExit((event) => {
-      if (event.tabId === tabId && terminalRef.current && !isDisposedRef.current) {
+    const unsubscribe = window.electronAPI.onPtyExitForTab(tabId, (event) => {
+      if (terminalRef.current && !isDisposedRef.current) {
         terminalRef.current.write(`\r\n[Process exited with code ${event.exitCode}]`)
       }
     })

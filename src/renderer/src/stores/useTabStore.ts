@@ -489,6 +489,8 @@ export const useTabStore = create<TabState>((set, get) => ({
 
   setTerminalRef: (paneId, ref) => {
     set((state) => {
+      const currentRef = state.terminalRefs.get(paneId) ?? null
+      if (currentRef === ref) return state
       const newRefs = new Map(state.terminalRefs)
       if (ref) {
         newRefs.set(paneId, ref)

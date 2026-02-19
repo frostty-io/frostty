@@ -1,9 +1,7 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import * as os from 'os'
-import * as fs from 'fs'
-import { readdir, stat, access } from 'fs/promises'
-import { join, basename } from 'path'
+import { basename } from 'path'
 import { ipcMain } from 'electron'
 import {
   IPC_CHANNELS,
@@ -11,11 +9,11 @@ import {
   GitStatus,
   GitBranch,
   GitOperationResult,
-  GitStashEntry,
-  GitFileStatus,
-  GitRepoInfo
+  GitStashEntry
 } from '../shared/ipc'
 import { GIT_MAX_BUFFER } from '../shared/constants'
+import { getGitStatusViaPorcelainV2 } from './services/gitStatusService'
+import { scanGitRepos } from './services/repoScanner'
 
 const execAsync = promisify(exec)
 
@@ -38,19 +36,6 @@ async function runGitCommand(cwd: string, args: string): Promise<{ stdout: strin
   })
 }
 
-function parseGitStatusCode(code: string): GitFileStatus['status'] {
-  switch (code) {
-    case 'M': return 'modified'
-    case 'A': return 'added'
-    case 'D': return 'deleted'
-    case 'R': return 'renamed'
-    case 'C': return 'copied'
-    case '?': return 'untracked'
-    case '!': return 'ignored'
-    default: return 'modified'
-  }
-}
-
 // ── Lightweight repo info (for tab display) ─────────────────────────────────
 
 async function getGitRepoInfo(cwd: string): Promise<GitRepoInfoResult> {
@@ -69,106 +54,7 @@ async function getGitRepoInfo(cwd: string): Promise<GitRepoInfoResult> {
 // ── Git status / branch queries ──────────────────────────────────────────────
 
 async function getGitStatus(cwd: string): Promise<GitStatus> {
-  const defaultStatus: GitStatus = {
-    isRepo: false,
-    branch: '',
-    upstream: null,
-    ahead: 0,
-    behind: 0,
-    staged: [],
-    unstaged: [],
-    untracked: [],
-    conflicted: [],
-    stashCount: 0
-  }
-
-  try {
-    // Check if it's a git repo
-    await runGitCommand(cwd, 'rev-parse --git-dir')
-
-    // Get branch info
-    const { stdout: branchOutput } = await runGitCommand(cwd, 'branch --show-current')
-    const branch = branchOutput.trim() || 'HEAD'
-
-    // Get upstream info
-    let upstream: string | null = null
-    let ahead = 0
-    let behind = 0
-    try {
-      const { stdout: upstreamOutput } = await runGitCommand(cwd, `rev-parse --abbrev-ref ${branch}@{upstream}`)
-      upstream = upstreamOutput.trim()
-
-      // Get ahead/behind counts
-      const { stdout: aheadBehind } = await runGitCommand(cwd, `rev-list --left-right --count ${branch}...${upstream}`)
-      const [aheadStr, behindStr] = aheadBehind.trim().split(/\s+/)
-      ahead = parseInt(aheadStr, 10) || 0
-      behind = parseInt(behindStr, 10) || 0
-    } catch {
-      // No upstream configured
-    }
-
-    // Get porcelain status
-    const { stdout: statusOutput } = await runGitCommand(cwd, 'status --porcelain=v1')
-    const staged: GitFileStatus[] = []
-    const unstaged: GitFileStatus[] = []
-    const untracked: GitFileStatus[] = []
-    const conflicted: GitFileStatus[] = []
-
-    for (const line of statusOutput.split('\n')) {
-      if (!line) continue
-      const indexStatus = line[0]
-      const workStatus = line[1]
-      const filePath = line.slice(3)
-
-      // Check for conflicts (both modified, or unmerged states)
-      if (indexStatus === 'U' || workStatus === 'U' ||
-          (indexStatus === 'A' && workStatus === 'A') ||
-          (indexStatus === 'D' && workStatus === 'D')) {
-        conflicted.push({ path: filePath, status: 'modified', staged: false })
-        continue
-      }
-
-      // Untracked
-      if (indexStatus === '?' && workStatus === '?') {
-        untracked.push({ path: filePath, status: 'untracked', staged: false })
-        continue
-      }
-
-      // Staged changes
-      if (indexStatus !== ' ' && indexStatus !== '?') {
-        staged.push({ path: filePath, status: parseGitStatusCode(indexStatus), staged: true })
-      }
-
-      // Unstaged changes
-      if (workStatus !== ' ' && workStatus !== '?') {
-        unstaged.push({ path: filePath, status: parseGitStatusCode(workStatus), staged: false })
-      }
-    }
-
-    // Get stash count
-    let stashCount = 0
-    try {
-      const { stdout: stashOutput } = await runGitCommand(cwd, 'stash list')
-      stashCount = stashOutput.split('\n').filter(l => l.trim()).length
-    } catch {
-      // No stash
-    }
-
-    return {
-      isRepo: true,
-      branch,
-      upstream,
-      ahead,
-      behind,
-      staged,
-      unstaged,
-      untracked,
-      conflicted,
-      stashCount
-    }
-  } catch {
-    return defaultStatus
-  }
+  return getGitStatusViaPorcelainV2(cwd, runGitCommand)
 }
 
 async function getGitBranches(cwd: string): Promise<GitBranch[]> {
@@ -326,69 +212,6 @@ async function gitDiscard(cwd: string, files: string[]): Promise<GitOperationRes
     const error = err as Error & { stderr?: string }
     return { success: false, message: 'Discard failed', error: error.stderr || error.message }
   }
-}
-
-// ── Git repo scanning ────────────────────────────────────────────────────────
-
-async function scanGitRepos(baseDir: string): Promise<GitRepoInfo[]> {
-  const repos: GitRepoInfo[] = []
-  const expandedDir = baseDir.replace(/^~/, os.homedir())
-
-  async function checkForGitRepo(dirPath: string): Promise<boolean> {
-    try {
-      const gitPath = join(dirPath, '.git')
-      const gitStat = await stat(gitPath)
-      return gitStat.isDirectory()
-    } catch {
-      return false
-    }
-  }
-
-  async function scanDirectory(dir: string, depth: number): Promise<void> {
-    if (depth > 2) return
-
-    try {
-      const entries = await readdir(dir, { withFileTypes: true })
-
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue
-        // Skip hidden directories
-        if (entry.name.startsWith('.')) continue
-
-        const dirPath = join(dir, entry.name)
-
-        // Check if this directory is a git repo
-        if (await checkForGitRepo(dirPath)) {
-          repos.push({
-            path: dirPath,
-            name: basename(dirPath)
-          })
-          // Don't scan inside git repos
-          continue
-        }
-
-        // If not a repo and we haven't reached max depth, scan deeper
-        if (depth < 2) {
-          await scanDirectory(dirPath, depth + 1)
-        }
-      }
-    } catch {
-      // Directory not accessible, skip
-    }
-  }
-
-  try {
-    // Check if base directory exists
-    await access(expandedDir, fs.constants.R_OK)
-    await scanDirectory(expandedDir, 1)
-
-    // Sort alphabetically by name
-    repos.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-  } catch {
-    // Directory doesn't exist or not accessible
-  }
-
-  return repos
 }
 
 // ── IPC registration ─────────────────────────────────────────────────────────

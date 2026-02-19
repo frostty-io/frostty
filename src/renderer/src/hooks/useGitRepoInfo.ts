@@ -1,33 +1,60 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { GitRepoInfoResult } from '@shared/ipc'
+import { GIT_REPO_INFO_CACHE_MS } from '../../../shared/constants'
 
 const GIT_REPO_INFO_POLL_MS = 10_000 // poll every 10s (branch can change)
 
+interface RepoInfoCacheEntry {
+  value: GitRepoInfoResult | null
+  updatedAt: number
+  inFlight: Promise<GitRepoInfoResult | null> | null
+}
+
+const repoInfoCache = new Map<string, RepoInfoCacheEntry>()
+
+function getCacheEntry(cwd: string): RepoInfoCacheEntry {
+  let entry = repoInfoCache.get(cwd)
+  if (!entry) {
+    entry = { value: null, updatedAt: 0, inFlight: null }
+    repoInfoCache.set(cwd, entry)
+  }
+  return entry
+}
+
+async function fetchRepoInfoCached(cwd: string, force = false): Promise<GitRepoInfoResult | null> {
+  const entry = getCacheEntry(cwd)
+  const now = Date.now()
+
+  if (!force && entry.value && now - entry.updatedAt < GIT_REPO_INFO_CACHE_MS) {
+    return entry.value
+  }
+  if (entry.inFlight) return entry.inFlight
+
+  entry.inFlight = window.electronAPI.gitRepoInfo(cwd)
+    .then((result) => {
+      entry.value = result
+      entry.updatedAt = Date.now()
+      return result
+    })
+    .catch(() => {
+      entry.value = null
+      entry.updatedAt = Date.now()
+      return null
+    })
+    .finally(() => {
+      entry.inFlight = null
+    })
+
+  return entry.inFlight
+}
+
 /**
  * Lightweight hook that returns git repo name + branch for a given CWD.
- * Uses the fast `git:repoInfo` IPC channel (only 2 git commands) so it's
- * safe to call for every tab simultaneously.
- *
- * To avoid flicker, the previous result is kept visible while a new fetch
- * is in-flight. The display only updates once the new result arrives.
+ * The cache is keyed by CWD to dedupe parallel tab/pane requests.
  */
 export function useGitRepoInfo(cwd: string | undefined): GitRepoInfoResult | null {
   const [info, setInfo] = useState<GitRepoInfoResult | null>(null)
   const activeCwdRef = useRef(cwd)
-
-  const fetchInfo = useCallback(async (targetCwd: string) => {
-    try {
-      const result = await window.electronAPI.gitRepoInfo(targetCwd)
-      // Only apply if this CWD is still the current one (avoids race conditions)
-      if (activeCwdRef.current === targetCwd) {
-        setInfo(result)
-      }
-    } catch {
-      if (activeCwdRef.current === targetCwd) {
-        setInfo(null)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     activeCwdRef.current = cwd
@@ -37,17 +64,27 @@ export function useGitRepoInfo(cwd: string | undefined): GitRepoInfoResult | nul
       return
     }
 
-    // Fetch immediately — old info stays visible until this resolves
-    fetchInfo(cwd)
+    void fetchRepoInfoCached(cwd, false).then((result) => {
+      if (activeCwdRef.current === cwd) {
+        setInfo(result)
+      }
+    })
 
-    // Poll for branch changes (e.g. user switches branches in terminal)
     const interval = setInterval(() => {
       if (document.hidden) return
-      fetchInfo(cwd)
+      void fetchRepoInfoCached(cwd, false).then((result) => {
+        if (activeCwdRef.current === cwd) {
+          setInfo(result)
+        }
+      })
     }, GIT_REPO_INFO_POLL_MS)
 
     return () => clearInterval(interval)
-  }, [cwd, fetchInfo])
+  }, [cwd])
 
   return info
+}
+
+export function __clearGitRepoInfoCacheForTests(): void {
+  repoInfoCache.clear()
 }

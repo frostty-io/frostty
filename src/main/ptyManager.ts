@@ -1,11 +1,22 @@
 import * as pty from 'node-pty'
 import * as os from 'os'
 import * as fs from 'fs'
-import * as path from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { BrowserWindow, app } from 'electron'
+import { BrowserWindow } from 'electron'
 import { IPC_CHANNELS, ShellType, AvailableShell } from '../shared/ipc'
+import {
+  ensureShellIntegration,
+  getShellEnvironment,
+  preloadShellEnvironment as preloadShellEnvironmentService
+} from './services/shellIntegrationService'
+import {
+  clearAllPtyCwd,
+  clearPtyCwd,
+  getCachedPtyCwd,
+  updatePtyCwd
+} from './services/ptyCwdService'
+import { appendPtyChunk, type PtyBatchAccumulator } from './services/ptyBatching'
 
 const execAsync = promisify(exec)
 const readlinkAsync = promisify(fs.readlink)
@@ -19,141 +30,19 @@ const ptyWindowMap = new Map<string, number>()
 // Batched PTY output: accumulate chunks and flush on interval or size threshold
 const PTY_BATCH_FLUSH_MS = 16
 const PTY_BATCH_MAX_BYTES = 64 * 1024
-const ptyDataPending = new Map<string, { window: BrowserWindow; chunks: string[] }>()
-let ptyFlushTimer: ReturnType<typeof setTimeout> | null = null
-
-// Cached shell environment (fetched once from login shell)
-let cachedShellEnv: { [key: string]: string } | null = null
-let shellEnvPromise: Promise<{ [key: string]: string }> | null = null
-
-/**
- * Get environment variables from the user's login shell (async).
- * This ensures we have the same PATH as other terminals.
- */
-async function getShellEnvironment(): Promise<{ [key: string]: string }> {
-  if (cachedShellEnv) return cachedShellEnv
-  if (shellEnvPromise) return shellEnvPromise
-
-  const homeDir = os.homedir()
-  const shell = process.env.SHELL || '/bin/zsh'
-
-  shellEnvPromise = (async () => {
-    try {
-      const { stdout: envOutput } = await execAsync(`${shell} -l -i -c 'env'`, {
-        encoding: 'utf8',
-        timeout: 5000,
-        maxBuffer: 2 * 1024 * 1024,
-        env: {
-          HOME: homeDir,
-          USER: process.env.USER || '',
-          SHELL: shell,
-          TERM: 'xterm-256color',
-        },
-      })
-
-      const env: { [key: string]: string } = {}
-      for (const line of envOutput.split('\n')) {
-        const eqIndex = line.indexOf('=')
-        if (eqIndex > 0) {
-          const key = line.substring(0, eqIndex)
-          const value = line.substring(eqIndex + 1)
-          env[key] = value
-        }
-      }
-
-      cachedShellEnv = env
-      return env
-    } catch (error) {
-      console.error('Failed to get shell environment:', error)
-      return process.env as { [key: string]: string }
-    }
-  })()
-
-  return shellEnvPromise
+export interface PtyBatchEntry {
+  window: BrowserWindow
+  chunks: PtyBatchAccumulator['chunks']
+  bytes: PtyBatchAccumulator['bytes']
 }
+const ptyDataPending = new Map<string, PtyBatchEntry>()
+let ptyFlushTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
  * Pre-fetch shell environment at app startup so the first PTY spawn doesn't block.
  */
 export function preloadShellEnvironment(): void {
-  getShellEnvironment().catch(() => {})
-}
-
-// Shell integration directory
-let shellIntegrationDir: string | null = null
-
-/**
- * Initialize shell integration scripts that enable OSC 7
- * These are sourced during shell startup, so no commands are visible
- */
-function initShellIntegration(): string {
-  if (shellIntegrationDir) return shellIntegrationDir
-
-  const hostname = os.hostname()
-  const userDataPath = app.getPath('userData')
-  shellIntegrationDir = path.join(userDataPath, 'shell-integration')
-
-  // Create the directory
-  if (!fs.existsSync(shellIntegrationDir)) {
-    fs.mkdirSync(shellIntegrationDir, { recursive: true })
-  }
-
-  // Create zsh integration directory with .zshrc
-  const zshDir = path.join(shellIntegrationDir, 'zsh')
-  if (!fs.existsSync(zshDir)) {
-    fs.mkdirSync(zshDir, { recursive: true })
-  }
-
-  // .zshenv is sourced first, before .zshrc
-  // We set up OSC 7 here and source the user's real config
-  const zshEnv = `# Frostty shell integration
-# Set up OSC 7 directory reporting
-__frostty_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD" }
-autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook chpwd __frostty_osc7
-autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook precmd __frostty_osc7
-
-# Restore ZDOTDIR and source user's zsh config
-export ZDOTDIR="$HOME"
-[[ -f "$HOME/.zshenv" ]] && source "$HOME/.zshenv"
-`
-  fs.writeFileSync(path.join(zshDir, '.zshenv'), zshEnv)
-
-  // .zshrc sources user's real .zshrc
-  const zshRc = `# Frostty: source user's zshrc
-[[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
-# Emit initial OSC 7
-__frostty_osc7
-`
-  fs.writeFileSync(path.join(zshDir, '.zshrc'), zshRc)
-
-  // Bash integration script (sourced via BASH_ENV)
-  const bashInit = `# Frostty shell integration
-__frostty_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD"; }
-PROMPT_COMMAND="__frostty_osc7\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
-__frostty_osc7
-`
-  fs.writeFileSync(path.join(shellIntegrationDir, 'bash_init.sh'), bashInit)
-
-  // Fish shell integration
-  const fishDir = path.join(shellIntegrationDir, 'fish')
-  const fishConfDir = path.join(fishDir, 'conf.d')
-  if (!fs.existsSync(fishConfDir)) {
-    fs.mkdirSync(fishConfDir, { recursive: true })
-  }
-
-  // Fish config that sources user config and sets up OSC 7
-  const fishConfig = `# Frostty fish shell integration
-# Emit OSC 7 for directory tracking
-function __frostty_osc7 --on-variable PWD --description 'Emit OSC 7 escape sequence'
-    printf '\\e]7;file://${hostname}%s\\a' "$PWD"
-end
-
-# Emit initial OSC 7
-__frostty_osc7
-`
-  fs.writeFileSync(path.join(fishConfDir, 'frostty.fish'), fishConfig)
-
-  return shellIntegrationDir
+  preloadShellEnvironmentService()
 }
 
 /**
@@ -187,12 +76,15 @@ function flushPtyData(): void {
     if (entry.chunks.length === 0) continue
     if (entry.window.isDestroyed()) {
       entry.chunks = []
+      entry.bytes = 0
       continue
     }
     const data = entry.chunks.join('')
     entry.chunks = []
+    entry.bytes = 0
     const cwd = parseOsc7(data)
     if (cwd) {
+      updatePtyCwd(tabId, cwd)
       entry.window.webContents.send(IPC_CHANNELS.PTY_CWD, { tabId, cwd })
     }
     entry.window.webContents.send(IPC_CHANNELS.PTY_DATA, { tabId, data })
@@ -334,7 +226,7 @@ export async function spawnPty(tabId: string, window: BrowserWindow, requestedCw
     : resolvedCwd
 
   // Initialize shell integration scripts
-  const integrationDir = initShellIntegration()
+  const integrationPaths = await ensureShellIntegration()
 
   // Get environment from the user's login shell (async, non-blocking)
   const shellEnv = await getShellEnvironment()
@@ -355,40 +247,11 @@ export async function spawnPty(tabId: string, window: BrowserWindow, requestedCw
 
   if (shellName === 'zsh') {
     // ZDOTDIR tells zsh where to look for .zshrc, .zshenv, etc.
-    env.ZDOTDIR = path.join(integrationDir, 'zsh')
+    env.ZDOTDIR = integrationPaths.zshDir
   } else if (shellName === 'bash') {
-    // For bash, use --rcfile to source our integration script
-    const bashRcFile = path.join(integrationDir, 'bash_init.sh')
-    // Create a combined rcfile that sources both our init and user's bashrc
-    const combinedBashRc = `# Frostty bash integration
-source "${bashRcFile}"
-[[ -f "$HOME/.bashrc" ]] && source "$HOME/.bashrc"
-`
-    const combinedRcPath = path.join(integrationDir, 'bashrc_combined')
-    fs.writeFileSync(combinedRcPath, combinedBashRc)
-    args = ['--rcfile', combinedRcPath]
+    args = ['--rcfile', integrationPaths.bashCombinedRcPath]
   } else if (shellName === 'fish') {
-    // For fish, use XDG_CONFIG_HOME to point to our config directory
-    // Fish will source conf.d/frostty.fish automatically
-    const fishConfigDir = path.join(integrationDir, 'fish')
-    env.XDG_CONFIG_HOME = integrationDir
-    // Also copy any existing fish config
-    const userFishConfig = path.join(homeDir, '.config', 'fish', 'config.fish')
-    const frosttyFishConfig = path.join(fishConfigDir, 'config.fish')
-    if (fs.existsSync(userFishConfig) && !fs.existsSync(frosttyFishConfig)) {
-      try {
-        // Create a config.fish that sources the user's config
-        const wrapperConfig = `# Frostty fish config wrapper
-# Source user's fish config
-if test -f "${userFishConfig}"
-    source "${userFishConfig}"
-end
-`
-        fs.writeFileSync(frosttyFishConfig, wrapperConfig)
-      } catch {
-        // Ignore errors
-      }
-    }
+    env.XDG_CONFIG_HOME = integrationPaths.integrationDir
   }
 
   const ptyProcess = pty.spawn(shell, args, {
@@ -405,17 +268,18 @@ end
 
     let entry = ptyDataPending.get(tabId)
     if (!entry) {
-      entry = { window, chunks: [] }
+      entry = { window, chunks: [], bytes: 0 }
       ptyDataPending.set(tabId, entry)
     }
-    entry.chunks.push(data)
-    const totalSize = entry.chunks.reduce((sum, s) => sum + s.length, 0)
+    appendPtyChunk(entry, data)
 
-    if (totalSize >= PTY_BATCH_MAX_BYTES) {
+    if (entry.bytes >= PTY_BATCH_MAX_BYTES) {
       const joined = entry.chunks.join('')
       entry.chunks = []
+      entry.bytes = 0
       const cwd = parseOsc7(joined)
       if (cwd) {
+        updatePtyCwd(tabId, cwd)
         window.webContents.send(IPC_CHANNELS.PTY_CWD, { tabId, cwd })
       }
       window.webContents.send(IPC_CHANNELS.PTY_DATA, { tabId, data: joined })
@@ -427,6 +291,7 @@ end
   // Handle PTY exit
   ptyProcess.onExit(({ exitCode, signal }) => {
     ptyDataPending.delete(tabId)
+    clearPtyCwd(tabId)
     if (!window.isDestroyed()) {
       window.webContents.send(IPC_CHANNELS.PTY_EXIT, { tabId, exitCode, signal })
     }
@@ -468,6 +333,7 @@ export function killPty(tabId: string): void {
     ptyProcess.kill()
     ptyProcesses.delete(tabId)
   }
+  clearPtyCwd(tabId)
   ptyWindowMap.delete(tabId)
 }
 
@@ -479,6 +345,7 @@ export function killAllPtys(): void {
     ptyProcess.kill()
     ptyProcesses.delete(tabId)
   })
+  clearAllPtyCwd()
   ptyWindowMap.clear()
 }
 
@@ -501,6 +368,9 @@ export function killPtysForWindow(webContentsId: number): void {
  * Get the current working directory of a PTY process (fallback method, async).
  */
 export async function getCwd(tabId: string): Promise<string> {
+  const cached = getCachedPtyCwd(tabId)
+  if (cached) return cached
+
   const ptyProcess = ptyProcesses.get(tabId)
   if (!ptyProcess) {
     return '~'
@@ -550,7 +420,9 @@ export async function getCwd(tabId: string): Promise<string> {
         const match = lsofOutput.trim().match(/n(.+)/)
         if (match && match[1]) {
           const cwd = match[1]
-          return cwd.startsWith(homeDir) ? cwd.replace(homeDir, '~') : cwd
+          const normalized = cwd.startsWith(homeDir) ? cwd.replace(homeDir, '~') : cwd
+          updatePtyCwd(tabId, normalized)
+          return normalized
         }
       } catch {
         // Fall through
@@ -558,7 +430,9 @@ export async function getCwd(tabId: string): Promise<string> {
     } else if (process.platform === 'linux') {
       try {
         const cwd = await readlinkAsync(`/proc/${ptyPid}/cwd`)
-        return cwd.startsWith(homeDir) ? cwd.replace(homeDir, '~') : cwd
+        const normalized = cwd.startsWith(homeDir) ? cwd.replace(homeDir, '~') : cwd
+        updatePtyCwd(tabId, normalized)
+        return normalized
       } catch {
         // Fall through
       }

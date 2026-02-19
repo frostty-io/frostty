@@ -36,14 +36,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setSettings: (settings) => {
     set({ settings })
-    window.electronAPI.saveSettings(settings)
   },
 
   updateSettings: (partial) => {
     const { settings } = get()
     const updated = { ...settings, ...partial }
     set({ settings: updated })
-    window.electronAPI.saveSettings(updated)
   },
 
   loadSettings: async () => {

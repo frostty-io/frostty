@@ -22,6 +22,34 @@ import {
   WindowSession
 } from '../shared/ipc'
 
+type PtyDataListener = (event: PtyDataEvent) => void
+type PtyExitListener = (event: PtyExitEvent) => void
+
+const ptyDataTabListeners = new Map<string, Set<PtyDataListener>>()
+const ptyExitTabListeners = new Map<string, Set<PtyExitListener>>()
+let ptyDataRouterAttached = false
+let ptyExitRouterAttached = false
+
+function ensurePtyDataRouter(): void {
+  if (ptyDataRouterAttached) return
+  ptyDataRouterAttached = true
+  ipcRenderer.on(IPC_CHANNELS.PTY_DATA, (_event, data: PtyDataEvent) => {
+    const listeners = ptyDataTabListeners.get(data.tabId)
+    if (!listeners) return
+    for (const listener of listeners) listener(data)
+  })
+}
+
+function ensurePtyExitRouter(): void {
+  if (ptyExitRouterAttached) return
+  ptyExitRouterAttached = true
+  ipcRenderer.on(IPC_CHANNELS.PTY_EXIT, (_event, data: PtyExitEvent) => {
+    const listeners = ptyExitTabListeners.get(data.tabId)
+    if (!listeners) return
+    for (const listener of listeners) listener(data)
+  })
+}
+
 // Expose the electron API to the renderer process
 const electronAPI: ElectronAPI = {
   // Spawn a new PTY process
@@ -75,6 +103,22 @@ const electronAPI: ElectronAPI = {
     }
   },
 
+  // Subscribe to PTY data for a specific tab ID (preferred)
+  onPtyDataForTab: (tabId: string, callback: (event: PtyDataEvent) => void): (() => void) => {
+    ensurePtyDataRouter()
+    const listeners = ptyDataTabListeners.get(tabId) || new Set<PtyDataListener>()
+    listeners.add(callback)
+    ptyDataTabListeners.set(tabId, listeners)
+    return () => {
+      const tabListeners = ptyDataTabListeners.get(tabId)
+      if (!tabListeners) return
+      tabListeners.delete(callback)
+      if (tabListeners.size === 0) {
+        ptyDataTabListeners.delete(tabId)
+      }
+    }
+  },
+
   // Subscribe to PTY exit events
   onPtyExit: (callback: (event: PtyExitEvent) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: PtyExitEvent) => {
@@ -83,6 +127,22 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on(IPC_CHANNELS.PTY_EXIT, handler)
     return () => {
       ipcRenderer.removeListener(IPC_CHANNELS.PTY_EXIT, handler)
+    }
+  },
+
+  // Subscribe to PTY exit for a specific tab ID (preferred)
+  onPtyExitForTab: (tabId: string, callback: (event: PtyExitEvent) => void): (() => void) => {
+    ensurePtyExitRouter()
+    const listeners = ptyExitTabListeners.get(tabId) || new Set<PtyExitListener>()
+    listeners.add(callback)
+    ptyExitTabListeners.set(tabId, listeners)
+    return () => {
+      const tabListeners = ptyExitTabListeners.get(tabId)
+      if (!tabListeners) return
+      tabListeners.delete(callback)
+      if (tabListeners.size === 0) {
+        ptyExitTabListeners.delete(tabId)
+      }
     }
   },
 
