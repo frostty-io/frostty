@@ -1,0 +1,32 @@
+# Dependencies
+node_modules
+
+# Build output (electron-vite compiled code)
+out
+
+# Packaging output (electron-builder distributables)
+dist
+
+# Build resources (generated icons for electron-builder)
+build/*
+!build/icon.icns
+!build/icon.ico
+!build/icon.png
+!build/icon_256.png
+
+# Environment & secrets
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS & editor
+.DS_Store
+
+# Vite / Electron caches
+.vite
+.electron-vite
+
+# Test coverage
+coverage

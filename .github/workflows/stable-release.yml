@@ -1,0 +1,156 @@
+name: stable-release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  stable-release:
+    name: stable-release
+    if: ${{ github.event.release.prerelease == false && startsWith(github.event.release.tag_name, 'v') }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set build metadata
+        run: |
+          echo "FROSTTY_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "FROSTTY_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm exec vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Validate Apple signing secrets
+        env:
+          APPLE_SIGNING_CERT: ${{ secrets.APPLE_SIGNING_CERT }}
+          APPLE_SIGNING_CERT_PASSWORD: ${{ secrets.APPLE_SIGNING_CERT_PASSWORD }}
+        run: |
+          missing=0
+          for name in APPLE_SIGNING_CERT APPLE_SIGNING_CERT_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: ${name}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Configure required notarization via API key
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          missing=0
+          for name in APPLE_API_KEY APPLE_API_KEY_ID APPLE_API_ISSUER; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret for API-key notarization: ${name}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          APPLE_API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_KEY" > "$APPLE_API_KEY_PATH"
+          chmod 600 "$APPLE_API_KEY_PATH"
+
+          echo "APPLE_API_KEY=$APPLE_API_KEY_PATH" >> "$GITHUB_ENV"
+          echo "APPLE_API_KEY_ID=${APPLE_API_KEY_ID}" >> "$GITHUB_ENV"
+          echo "APPLE_API_ISSUER=${APPLE_API_ISSUER}" >> "$GITHUB_ENV"
+
+      - name: Package macOS artifacts (signed)
+        env:
+          CSC_LINK: ${{ secrets.APPLE_SIGNING_CERT }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_SIGNING_CERT_PASSWORD }}
+        run: pnpm exec electron-builder --mac --publish never
+
+      - name: Release smoke verification
+        run: |
+          set -euo pipefail
+
+          if ! ls dist/*.dmg >/dev/null 2>&1; then
+            echo "::error::No .dmg artifact found in dist/"
+            exit 1
+          fi
+
+          if ! ls dist/*.zip >/dev/null 2>&1; then
+            echo "::error::No .zip artifact found in dist/"
+            exit 1
+          fi
+
+          APP_PATH="$(find dist -type d -name '*.app' | head -n 1)"
+          if [ -z "${APP_PATH}" ]; then
+            echo "::error::No .app bundle found under dist/"
+            exit 1
+          fi
+
+          echo "Validating codesign for ${APP_PATH}"
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+
+          echo "Assessing Gatekeeper policy for ${APP_PATH}"
+          spctl --assess --type execute --verbose=4 "${APP_PATH}"
+
+          echo "Validating notarization ticket for ${APP_PATH}"
+          xcrun stapler validate "${APP_PATH}"
+
+      - name: Generate checksums
+        run: |
+          rm -f dist/SHA256SUMS.txt
+          while IFS= read -r -d '' file; do
+            shasum -a 256 "$file" >> dist/SHA256SUMS.txt
+          done < <(find dist -type f \( -name '*.dmg' -o -name '*.zip' \) -print0)
+
+      - name: Upload artifacts to stable release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          fail_on_unmatched_files: false
+          overwrite_files: true
+          files: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
+            dist/SHA256SUMS.txt
+
+      - name: Upload test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stable-release-test-artifacts
+          if-no-files-found: ignore
+          path: |
+            coverage/**
+            test-results/**

@@ -1,0 +1,86 @@
+@import "tailwindcss";
+@config "../../../tailwind.config.js";
+
+@font-face {
+  font-family: "Frostty Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Frostty Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Frostty Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Frostty Terminal Nerd Mono";
+  src: url("./assets/fonts/jetbrainsmono-nerd/JetBrainsMonoNerdFontMono-BoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Modern Dark Theme - Always Dark */
+    --background: 220 15% 8%;
+    --foreground: 220 15% 95%;
+    --card: 220 15% 10%;
+    --card-foreground: 220 15% 95%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 220 15% 95%;
+    --primary: 220 15% 14%;
+    --primary-foreground: 220 15% 95%;
+    --secondary: 220 15% 11%;
+    --secondary-foreground: 220 15% 95%;
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 210 100% 55%;
+    --accent-foreground: 220 15% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 220 15% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 210 100% 55%;
+    --radius: 0.5rem;
+
+    /* Custom semantic colors */
+    --sidebar-bg: 220 15% 9%;
+    --sidebar-item-hover: 220 15% 13%;
+    --sidebar-item-active: 220 15% 15%;
+  }
+}
+
+/* Prevent selection on UI elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Reset body and html */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: hsl(var(--background));
+}
+
+.slider {
+  width: 6px!important;
+  border-radius: 6px!important;
+}

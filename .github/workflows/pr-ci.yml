@@ -1,0 +1,60 @@
+name: pr-ci
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  pr-ci:
+    name: pr-ci
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set build metadata
+        run: |
+          echo "FROSTTY_BUILD_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "FROSTTY_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm exec vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-ci-test-artifacts
+          if-no-files-found: ignore
+          path: |
+            coverage/**
+            test-results/**
