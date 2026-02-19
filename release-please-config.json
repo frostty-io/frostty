@@ -4,6 +4,7 @@
     ".": {
       "release-type": "node",
       "package-name": "frostty",
+      "bump-minor-pre-major": true,
       "include-v-in-tag": true,
       "changelog-path": "CHANGELOG.md"
     }
