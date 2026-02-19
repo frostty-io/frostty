@@ -86,7 +86,7 @@
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@10.14.0",
+  "packageManager": "pnpm@10.30.0",
   "pnpm": {
     "onlyBuiltDependencies": [
       "electron",
@@ -97,7 +97,7 @@
       "electron-builder-squirrel-windows": "^26.4.0",
       "dmg-builder": "^26.4.0",
       "tar@<7.5.8": ">=7.5.8",
-      "minimatch@<10.2.1": ">=10.2.1"
+      "minimatch@>=10 <10.2.1": ">=10.2.1"
     }
   },
   "build": {
@@ -130,6 +130,7 @@
     "mac": {
       "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools",
+      "x64ArchFiles": "**/node_modules/node-pty/**/darwin-*/**",
       "target": [
         {
           "target": "dmg",
@@ -146,6 +147,7 @@
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
+      "timestamp": "http://timestamp.apple.com/ts01",
       "entitlements": "config/entitlements.mac.plist",
       "entitlementsInherit": "config/entitlements.mac.plist",
       "extendInfo": {

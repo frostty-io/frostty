@@ -27,7 +27,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.14.0
+          version: 10.30.0
 
       - name: Setup Node.js (LTS)
         uses: actions/setup-node@v6
@@ -69,9 +69,10 @@ jobs:
         env:
           APPLE_SIGNING_CERT: ${{ secrets.APPLE_SIGNING_CERT }}
           APPLE_SIGNING_CERT_PASSWORD: ${{ secrets.APPLE_SIGNING_CERT_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           missing=0
-          for name in APPLE_SIGNING_CERT APPLE_SIGNING_CERT_PASSWORD; do
+          for name in APPLE_SIGNING_CERT APPLE_SIGNING_CERT_PASSWORD APPLE_SIGNING_IDENTITY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing required secret: ${name}"
               missing=1
@@ -110,6 +111,7 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.APPLE_SIGNING_CERT }}
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_SIGNING_CERT_PASSWORD }}
+          CSC_NAME: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: pnpm exec electron-builder --mac --publish never
 
       - name: Validate notarization ticket
