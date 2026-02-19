@@ -146,6 +146,7 @@
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
+      "timestamp": "http://timestamp.apple.com/ts01",
       "entitlements": "config/entitlements.mac.plist",
       "entitlementsInherit": "config/entitlements.mac.plist",
       "extendInfo": {
