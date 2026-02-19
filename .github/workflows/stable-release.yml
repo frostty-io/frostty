@@ -147,7 +147,7 @@ jobs:
 
       - name: Upload test and coverage artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stable-release-test-artifacts
           if-no-files-found: ignore
