@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: canary-${{ github.ref }}
@@ -43,15 +44,57 @@ jobs:
         run: |
           BUILD_DATE_ISO="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           BUILD_DATE_TAG="$(date -u +'%Y%m%d-%H%M')"
-          BUILD_DATE_NAME="$(date -u +'%Y-%m-%d %H:%M UTC')"
           SHORT_SHA="${GITHUB_SHA::7}"
           TAG="canary-${BUILD_DATE_TAG}-${SHORT_SHA}"
-          RELEASE_NAME="Canary ${BUILD_DATE_NAME}"
 
           echo "build_date_iso=${BUILD_DATE_ISO}" >> "$GITHUB_OUTPUT"
+          echo "build_date_tag=${BUILD_DATE_TAG}" >> "$GITHUB_OUTPUT"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve next version with release-please (dry-run)
+        id: next_version
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          skip-github-release: true
+          skip-github-pull-request: true
+
+      - name: Set canary package version
+        id: canary_version
+        env:
+          RP_VERSION: ${{ steps.next_version.outputs.version }}
+          RP_PRS: ${{ steps.next_version.outputs.prs }}
+          BUILD_DATE_TAG: ${{ steps.canary_meta.outputs.build_date_tag }}
+          SHORT_SHA: ${{ steps.canary_meta.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+
+          BASE_VERSION="${RP_VERSION}"
+          if [ -z "${BASE_VERSION}" ]; then
+            BASE_VERSION="$(node <<'NODE'
+          try {
+            const prs = JSON.parse(process.env.RP_PRS || '[]');
+            const v = prs?.[0]?.version || '';
+            process.stdout.write(v);
+          } catch {
+            process.stdout.write('');
+          }
+          NODE
+            )"
+          fi
+
+          if [ -z "${BASE_VERSION}" ]; then
+            BASE_VERSION="$(node -p "require('./package.json').version")"
+          fi
+
+          CANARY_VERSION="${BASE_VERSION}-canary.${BUILD_DATE_TAG}.${SHORT_SHA}"
+          pnpm version "${CANARY_VERSION}" --no-git-tag-version
+
+          echo "base_version=${BASE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "canary_version=${CANARY_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Lint
         run: pnpm run lint
@@ -137,7 +180,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.canary_meta.outputs.tag }}
-          name: ${{ steps.canary_meta.outputs.release_name }}
+          name: v${{ steps.canary_version.outputs.canary_version }}
           prerelease: true
           fail_on_unmatched_files: false
           files: |
