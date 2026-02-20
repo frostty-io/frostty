@@ -4,6 +4,7 @@ import { IPC_CHANNELS, WindowSession, SessionData } from '../shared/ipc'
 import { killPtysForWindow, killAllPtys } from './ptyManager'
 import { saveSession } from './sessionManager'
 import { SESSION_SAVE_TIMEOUT, SESSION_RELOAD_TIMEOUT } from '../shared/constants'
+import { getRuntimeLogoFilename } from '../shared/releaseChannel'
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,8 @@ const closeTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
 
 // Graceful-close state: windows waiting for renderer to serialize before closing
 const pendingCloseIds = new Set<number>()
+const RELEASE_CHANNEL = __FROSTTY_RELEASE_CHANNEL__
+const RUNTIME_LOGO = getRuntimeLogoFilename(RELEASE_CHANNEL)
 
 // ── Window creation ──────────────────────────────────────────────────────────
 
@@ -51,7 +54,7 @@ export function createWindow(
     minWidth: 600,
     minHeight: 400,
     backgroundColor: '#1a1b26',
-    icon: join(__dirname, '../resources/logo.png'),
+    icon: join(__dirname, `../resources/${RUNTIME_LOGO}`),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       contextIsolation: true,

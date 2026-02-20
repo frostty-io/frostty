@@ -1,7 +1,9 @@
 import { Search, X, ArrowUp, ArrowDown, Settings, FolderGit2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import frosttyLogo from '@resources/logo.png'
+import frosttyCanaryLogo from '@resources/logo_canary.png'
 import { usePlatform } from '@/hooks/usePlatform'
+import { getRuntimeLogoFilename } from '../../../shared/releaseChannel'
 
 interface KeyboardShortcut {
   label: string
@@ -38,6 +40,10 @@ function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
 export default function EmptyState() {
   const { modSymbol } = usePlatform()
   const [visible, setVisible] = useState(false)
+  const releaseChannel = typeof __FROSTTY_RELEASE_CHANNEL__ === 'string' ? __FROSTTY_RELEASE_CHANNEL__ : 'stable'
+  const logoSrc = getRuntimeLogoFilename(releaseChannel) === 'logo_canary.png'
+    ? frosttyCanaryLogo
+    : frosttyLogo
 
   const shortcuts: KeyboardShortcut[] = useMemo(() => [
     {
@@ -97,7 +103,7 @@ export default function EmptyState() {
 
           {/* Logo */}
           <img
-            src={frosttyLogo}
+            src={logoSrc}
             alt="Frostty"
             className="relative w-24 h-24 grayscale opacity-50"
             draggable={false}

@@ -18,6 +18,8 @@ jobs:
   canary:
     name: canary
     runs-on: macos-latest
+    env:
+      FROSTTY_RELEASE_CHANNEL: canary
 
     steps:
       - name: Checkout
@@ -155,7 +157,7 @@ jobs:
           CSC_LINK: ${{ secrets.APPLE_SIGNING_CERT }}
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_SIGNING_CERT_PASSWORD }}
           CSC_NAME: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-        run: pnpm exec electron-builder --mac --publish never
+        run: pnpm exec electron-builder --config electron-builder.config.mjs --mac --publish never
 
       - name: Validate notarization ticket
         run: |
@@ -164,6 +166,11 @@ jobs:
           APP_PATH="$(find dist -type d -name '*.app' | head -n 1)"
           if [ -z "${APP_PATH}" ]; then
             echo "::error::No .app bundle found under dist/"
+            exit 1
+          fi
+
+          if ! ls dist/canary*.yml >/dev/null 2>&1; then
+            echo "::error::No canary update metadata (canary*.yml) found in dist/"
             exit 1
           fi
 
@@ -187,7 +194,7 @@ jobs:
             dist/*.dmg
             dist/*.zip
             dist/*.blockmap
-            dist/latest*.yml
+            dist/canary*.yml
             dist/SHA256SUMS.txt
 
       - name: Cleanup old canary releases

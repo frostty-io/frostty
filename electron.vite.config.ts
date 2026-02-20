@@ -5,12 +5,14 @@ import { copyFileSync, mkdirSync, existsSync } from 'fs'
 
 const buildSha = process.env.FROSTTY_BUILD_SHA ?? process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'
 const buildDate = process.env.FROSTTY_BUILD_DATE ?? new Date().toISOString()
+const releaseChannel = process.env.FROSTTY_RELEASE_CHANNEL === 'canary' ? 'canary' : 'stable'
 
 export default defineConfig({
   main: {
     define: {
       __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
-      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate),
+      __FROSTTY_RELEASE_CHANNEL__: JSON.stringify(releaseChannel)
     },
     plugins: [
       externalizeDepsPlugin(),
@@ -23,11 +25,13 @@ export default defineConfig({
             mkdirSync(resourcesDir, { recursive: true })
           }
 
-          // Copy icon file
-          const srcIcon = resolve(__dirname, 'resources/logo.png')
-          const destIcon = resolve(__dirname, 'out/resources/logo.png')
-          if (existsSync(srcIcon)) {
-            copyFileSync(srcIcon, destIcon)
+          const logoFiles = ['logo.png', 'logo_canary.png']
+          for (const logoFile of logoFiles) {
+            const srcPath = resolve(__dirname, `resources/${logoFile}`)
+            const destPath = resolve(__dirname, `out/resources/${logoFile}`)
+            if (existsSync(srcPath)) {
+              copyFileSync(srcPath, destPath)
+            }
           }
         }
       }
@@ -43,7 +47,8 @@ export default defineConfig({
   preload: {
     define: {
       __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
-      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate),
+      __FROSTTY_RELEASE_CHANNEL__: JSON.stringify(releaseChannel)
     },
     plugins: [externalizeDepsPlugin()],
     build: {
@@ -57,7 +62,8 @@ export default defineConfig({
   renderer: {
     define: {
       __FROSTTY_BUILD_SHA__: JSON.stringify(buildSha),
-      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate)
+      __FROSTTY_BUILD_DATE__: JSON.stringify(buildDate),
+      __FROSTTY_RELEASE_CHANNEL__: JSON.stringify(releaseChannel)
     },
     root: 'src/renderer',
     resolve: {

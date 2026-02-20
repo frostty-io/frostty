@@ -125,6 +125,10 @@ Run this only when `resources/logo.png` changes. Generated icons in `build/` are
 - Canary prereleases are created from `main` with tags like `canary-YYYYMMDD-HHMM-<shortsha>`.
 - Canary artifacts are currently macOS-only.
 - Canary builds do not modify `package.json` version.
+- Stable builds use the production auto-update feed (`latest`).
+- Canary builds use a separate prerelease auto-update feed (`canary`).
+- Stable and canary installers include their updater metadata artifacts in the same GitHub release.
+- Canary uses a separate app identity (`io.frostty.app.canary` / `Frostty Canary`) and installs side-by-side with stable.
 - Stable and canary macOS artifacts are code-signed in CI using Apple Developer credentials.
 - Stable `v*` releases are notarized by default.
 - Build metadata (commit SHA and build date) is logged at startup and shown in About panel credits.

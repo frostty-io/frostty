@@ -32,11 +32,15 @@ import {
   startQuitFlow
 } from './windowManager'
 import { setupApplicationMenu } from './menuManager'
+import { initializeAutoUpdates } from './services/updateService'
+import { getRuntimeLogoFilename } from '../shared/releaseChannel'
 
 const execAsync = promisify(exec)
 const BUILD_SHA = __FROSTTY_BUILD_SHA__
 const BUILD_DATE = __FROSTTY_BUILD_DATE__
 const BUILD_INFO = `Build ${BUILD_SHA} (${BUILD_DATE})`
+const RELEASE_CHANNEL = __FROSTTY_RELEASE_CHANNEL__
+const RUNTIME_LOGO = getRuntimeLogoFilename(RELEASE_CHANNEL)
 
 // ── IPC Handlers (remaining) ─────────────────────────────────────────────────
 
@@ -137,15 +141,16 @@ function setupIpcHandlers(): void {
 
 app.whenReady().then(async () => {
   app.setAboutPanelOptions({
-    applicationName: 'Frostty',
+    applicationName: app.getName(),
     applicationVersion: app.getVersion(),
     copyright: '© Frostty Contributors',
     credits: `A modern GPU accelerated terminal emulator.\n${BUILD_INFO}`,
-    iconPath: join(__dirname, '../../resources/logo.png')
+    iconPath: join(__dirname, `../../resources/${RUNTIME_LOGO}`)
   })
 
   setupIpcHandlers()
   setupApplicationMenu()
+  initializeAutoUpdates(RELEASE_CHANNEL)
   preloadShellEnvironment()
 
   // Restore session or create a fresh window
