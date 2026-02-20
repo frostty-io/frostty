@@ -40,7 +40,8 @@ function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
 export default function EmptyState() {
   const { modSymbol } = usePlatform()
   const [visible, setVisible] = useState(false)
-  const logoSrc = getRuntimeLogoFilename(__FROSTTY_RELEASE_CHANNEL__) === 'logo_canary.png'
+  const releaseChannel = typeof __FROSTTY_RELEASE_CHANNEL__ === 'string' ? __FROSTTY_RELEASE_CHANNEL__ : 'stable'
+  const logoSrc = getRuntimeLogoFilename(releaseChannel) === 'logo_canary.png'
     ? frosttyCanaryLogo
     : frosttyLogo
 
