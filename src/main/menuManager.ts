@@ -1,8 +1,18 @@
 import { Menu, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc'
 import { createWindow, closeWindowGracefully, restoreLastClosedWindow } from './windowManager'
+import { checkForUpdatesManual } from './services/updateService'
 
 const isMac = process.platform === 'darwin'
+
+function createCheckForUpdatesMenuItem(): Electron.MenuItemConstructorOptions {
+  return {
+    label: 'Check for Updates...',
+    click: (): void => {
+      void checkForUpdatesManual()
+    }
+  }
+}
 
 /**
  * Build and set the native application menu.
@@ -26,6 +36,7 @@ export function setupApplicationMenu(): void {
             label: app.name,
             submenu: [
               { role: 'about' as const },
+              createCheckForUpdatesMenuItem(),
               { type: 'separator' as const },
               {
                 label: 'Settings...',
