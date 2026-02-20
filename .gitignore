@@ -13,6 +13,10 @@ build/*
 !build/icon.ico
 !build/icon.png
 !build/icon_256.png
+!build/icon_canary.icns
+!build/icon_canary.ico
+!build/icon_canary.png
+!build/icon_canary_256.png
 
 # Environment & secrets
 .env

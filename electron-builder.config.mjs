@@ -1,6 +1,9 @@
 const releaseChannel = process.env.FROSTTY_RELEASE_CHANNEL === 'canary' ? 'canary' : 'stable'
 const isCanary = releaseChannel === 'canary'
 const updateChannel = isCanary ? 'canary' : 'latest'
+const macIcon = isCanary ? 'build/icon_canary.icns' : 'build/icon.icns'
+const winIcon = isCanary ? 'build/icon_canary.ico' : 'build/icon.ico'
+const linuxIcon = isCanary ? 'build/icon_canary.png' : 'build/icon.png'
 
 /** @type {import('electron-builder').Configuration} */
 const config = {
@@ -13,8 +16,6 @@ const config = {
   files: [
     'out/**/*',
     'resources/**/*',
-    '!node_modules',
-    'node_modules/node-pty/**',
     '!src',
     '!**.md'
   ],
@@ -39,7 +40,7 @@ const config = {
     }
   ],
   mac: {
-    icon: 'build/icon.icns',
+    icon: macIcon,
     category: 'public.app-category.developer-tools',
     x64ArchFiles: '**/node_modules/node-pty/**/darwin-*/**',
     target: [
@@ -86,7 +87,7 @@ const config = {
     }
   },
   win: {
-    icon: 'build/icon.ico',
+    icon: winIcon,
     target: [
       {
         target: 'nsis',
@@ -110,7 +111,7 @@ const config = {
     createStartMenuShortcut: true
   },
   linux: {
-    icon: 'build/icon.png',
+    icon: linuxIcon,
     category: 'Development',
     target: [
       {
