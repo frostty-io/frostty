@@ -113,7 +113,7 @@ pnpm run format        # format
 pnpm run build-icons
 ```
 
-Run this only when `resources/logo.png` changes. Generated icons in `build/` are committed.
+Run this when `resources/logo.png` or `resources/logo_canary.png` changes. Generated icons in `build/` are committed.
 
 ## Releases
 
