@@ -184,4 +184,48 @@ describe('updateService', () => {
 
     expect(updater.quitAndInstallSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('shows a single error dialog when updater emits error and rejects during manual check', async () => {
+    const updater = createUpdaterMock()
+    const { showMessageBox, spy } = createShowMessageBoxMock(0)
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const error = new Error('No published versions on GitHub')
+
+    updater.checkForUpdatesSpy.mockImplementation(async () => {
+      updater.emit('error', error)
+      throw error
+    })
+
+    const setTimeoutFn: typeof setTimeout = (() => {
+      return 1 as unknown as ReturnType<typeof setTimeout>
+    }) as unknown as typeof setTimeout
+
+    const setIntervalFn: typeof setInterval = (() => {
+      return 1 as unknown as ReturnType<typeof setInterval>
+    }) as unknown as typeof setInterval
+
+    initializeAutoUpdates('canary', {
+      updater,
+      platform: 'darwin',
+      isPackaged: () => true,
+      showMessageBox,
+      logger,
+      setTimeoutFn,
+      setIntervalFn
+    })
+
+    await checkForUpdatesManual({
+      updater,
+      platform: 'darwin',
+      isPackaged: () => true,
+      showMessageBox,
+      logger
+    })
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Unable to check for updates.',
+      detail: 'No published versions on GitHub'
+    }))
+  })
 })

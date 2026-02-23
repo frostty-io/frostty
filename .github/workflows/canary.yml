@@ -47,12 +47,10 @@ jobs:
           BUILD_DATE_ISO="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           BUILD_DATE_TAG="$(date -u +'%Y%m%d-%H%M')"
           SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="canary-${BUILD_DATE_TAG}-${SHORT_SHA}"
 
           echo "build_date_iso=${BUILD_DATE_ISO}" >> "$GITHUB_OUTPUT"
           echo "build_date_tag=${BUILD_DATE_TAG}" >> "$GITHUB_OUTPUT"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve next version with release-please (dry-run)
         id: next_version
@@ -186,7 +184,7 @@ jobs:
       - name: Create GitHub prerelease
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.canary_meta.outputs.tag }}
+          tag_name: v${{ steps.canary_version.outputs.canary_version }}
           name: v${{ steps.canary_version.outputs.canary_version }}
           prerelease: true
           fail_on_unmatched_files: false
@@ -212,7 +210,7 @@ jobs:
             })
 
             const canaries = releases
-              .filter((release) => release.tag_name && release.tag_name.startsWith('canary-'))
+              .filter((release) => release.prerelease && release.tag_name && release.tag_name.includes('-canary.'))
               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
             const toDelete = canaries.slice(keep)

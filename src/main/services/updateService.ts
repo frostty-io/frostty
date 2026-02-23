@@ -173,7 +173,7 @@ async function checkForUpdates(deps: UpdateServiceDependencies, manual: boolean)
     await deps.updater.checkForUpdates()
   } catch (error) {
     deps.logger.error('[updater] check failed:', error)
-    if (manual) {
+    if (manual && manualCheckRequested) {
       manualCheckRequested = false
       await deps.showMessageBox(getUpdateCheckErrorMessage(error))
     }
