@@ -172,6 +172,23 @@ jobs:
             exit 1
           fi
 
+          if ! ls dist/*.zip >/dev/null 2>&1; then
+            echo "::error::No .zip artifact found in dist/"
+            exit 1
+          fi
+
+          if ! ls dist/*.dmg >/dev/null 2>&1; then
+            echo "::error::No .dmg artifact found in dist/"
+            exit 1
+          fi
+
+          while IFS= read -r url; do
+            if [ ! -f "dist/${url}" ]; then
+              echo "::error::Update metadata references missing artifact: dist/${url}"
+              exit 1
+            fi
+          done < <(awk '/- url: /{print $3}' dist/canary-mac.yml)
+
           xcrun stapler validate "${APP_PATH}"
 
       - name: Generate checksums
