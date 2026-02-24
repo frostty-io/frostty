@@ -228,4 +228,52 @@ describe('updateService', () => {
       detail: 'No published versions on GitHub'
     }))
   })
+
+  it('shows download failure after update was found during manual check', async () => {
+    const updater = createUpdaterMock()
+    const { showMessageBox, spy } = createShowMessageBoxMock(0)
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const error = new Error('Cannot find canary-mac.yml in the latest release artifacts')
+
+    updater.checkForUpdatesSpy.mockImplementation(async () => {
+      updater.emit('update-available')
+      updater.emit('error', error)
+      throw error
+    })
+
+    const setTimeoutFn: typeof setTimeout = (() => {
+      return 1 as unknown as ReturnType<typeof setTimeout>
+    }) as unknown as typeof setTimeout
+
+    const setIntervalFn: typeof setInterval = (() => {
+      return 1 as unknown as ReturnType<typeof setInterval>
+    }) as unknown as typeof setInterval
+
+    initializeAutoUpdates('canary', {
+      updater,
+      platform: 'darwin',
+      isPackaged: () => true,
+      showMessageBox,
+      logger,
+      setTimeoutFn,
+      setIntervalFn
+    })
+
+    await checkForUpdatesManual({
+      updater,
+      platform: 'darwin',
+      isPackaged: () => true,
+      showMessageBox,
+      logger
+    })
+
+    expect(spy).toHaveBeenCalledTimes(2)
+    expect(spy).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      message: 'Update found.'
+    }))
+    expect(spy).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      message: 'Unable to check for updates.',
+      detail: 'Cannot find canary-mac.yml in the latest release artifacts'
+    }))
+  })
 })
