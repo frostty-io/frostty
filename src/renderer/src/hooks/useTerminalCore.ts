@@ -33,6 +33,30 @@ interface UseTerminalCoreOptions {
 
 // Global state to track spawned PTYs across hot reloads
 const spawnedPtys = new Set<string>()
+const TERMINAL_FONT_FAMILY = 'Frostty Terminal Nerd Mono'
+let terminalFontReadyPromise: Promise<void> | null = null
+
+function ensureTerminalFontReady(): Promise<void> {
+  if (!terminalFontReadyPromise) {
+    terminalFontReadyPromise = (async () => {
+      if (typeof document === 'undefined' || !('fonts' in document)) return
+
+      try {
+        await Promise.all([
+          document.fonts.load(`400 ${TERMINAL_FONT_SIZE_DEFAULT}px "${TERMINAL_FONT_FAMILY}"`),
+          document.fonts.load(`700 ${TERMINAL_FONT_SIZE_DEFAULT}px "${TERMINAL_FONT_FAMILY}"`),
+          document.fonts.load(`italic 400 ${TERMINAL_FONT_SIZE_DEFAULT}px "${TERMINAL_FONT_FAMILY}"`),
+          document.fonts.load(`italic 700 ${TERMINAL_FONT_SIZE_DEFAULT}px "${TERMINAL_FONT_FAMILY}"`)
+        ])
+        await document.fonts.ready
+      } catch (e) {
+        console.warn('Terminal font preload failed; using fallback metrics:', e)
+      }
+    })()
+  }
+
+  return terminalFontReadyPromise
+}
 
 // Expose cleanup function globally so App can remove PTY from set on tab close
 if (typeof window !== 'undefined') {
@@ -76,6 +100,7 @@ export function useTerminalCore({
   const shellRef = useRef(shell)
   const onShellReadyRef = useRef(onShellReady)
   const fontSizeRef = useRef(fontSize)
+  const isInitializingRef = useRef(false)
 
   // Keep refs updated
   tabIdRef.current = tabId
@@ -104,133 +129,143 @@ export function useTerminalCore({
 
       // Don't reinitialize if already set up
       if (terminalRef.current) return
+      if (isInitializingRef.current) return
+      isInitializingRef.current = true
 
-      const terminal = new Terminal({
-        cursorBlink: true,
-        cursorStyle: 'block',
-        fontSize: fontSizeRef.current,
-        fontFamily: 'Frostty Terminal Nerd Mono',
-        lineHeight: 1.2,
-        scrollback: TERMINAL_SCROLLBACK,
-        allowProposedApi: true,
-        customGlyphs: true,
-        rescaleOverlappingGlyphs: true,
+      void (async () => {
+        await ensureTerminalFontReady()
+        if (isDisposedRef.current || !containerRef.current) return
 
-        theme: {
-          background: '#1a1b26',
-          foreground: '#c0caf5',
-          cursor: '#c0caf5',
-          cursorAccent: '#1a1b26',
-          selectionBackground: '#33467c',
-          selectionForeground: '#c0caf5',
-          black: '#15161e',
-          red: '#f7768e',
-          green: '#9ece6a',
-          yellow: '#e0af68',
-          blue: '#7aa2f7',
-          magenta: '#bb9af7',
-          cyan: '#7dcfff',
-          white: '#a9b1d6',
-          brightBlack: '#414868',
-          brightRed: '#f7768e',
-          brightGreen: '#9ece6a',
-          brightYellow: '#e0af68',
-          brightBlue: '#7aa2f7',
-          brightMagenta: '#bb9af7',
-          brightCyan: '#7dcfff',
-          brightWhite: '#c0caf5'
-        }
-      })
+        const terminal = new Terminal({
+          cursorBlink: true,
+          cursorStyle: 'block',
+          fontSize: fontSizeRef.current,
+          fontFamily: TERMINAL_FONT_FAMILY,
+          lineHeight: 1.2,
+          scrollback: TERMINAL_SCROLLBACK,
+          allowProposedApi: true,
+          customGlyphs: true,
+          rescaleOverlappingGlyphs: true,
 
-      const fitAddon = new FitAddon()
-      terminal.loadAddon(fitAddon)
-      terminal.open(container)
-
-      terminalRef.current = terminal
-      fitAddonRef.current = fitAddon
-
-      // Load Unicode11 addon for better unicode character width detection
-      const unicode11Addon = new Unicode11Addon()
-      terminal.loadAddon(unicode11Addon)
-      terminal.unicode.activeVersion = '11'
-
-      // Load ligatures addon so supported fonts can render ligatures correctly
-      const ligaturesAddon = new LigaturesAddon()
-      terminal.loadAddon(ligaturesAddon)
-
-      // Load WebLinks addon to make URLs clickable
-      const webLinksAddon = new WebLinksAddon()
-      terminal.loadAddon(webLinksAddon)
-
-      // Load Serialize addon for session persistence
-      const serializeAddon = new SerializeAddon()
-      terminal.loadAddon(serializeAddon)
-      serializeAddonRef.current = serializeAddon
-
-      // Load WebGL addon for better performance
-      try {
-        const webglAddon = new WebglAddon()
-        webglAddon.onContextLoss(() => {
-          // Force fallback to non-WebGL renderer after context loss.
-          if (webglAddonRef.current === webglAddon) {
-            webglAddonRef.current = null
+          theme: {
+            background: '#1a1b26',
+            foreground: '#c0caf5',
+            cursor: '#c0caf5',
+            cursorAccent: '#1a1b26',
+            selectionBackground: '#33467c',
+            selectionForeground: '#c0caf5',
+            black: '#15161e',
+            red: '#f7768e',
+            green: '#9ece6a',
+            yellow: '#e0af68',
+            blue: '#7aa2f7',
+            magenta: '#bb9af7',
+            cyan: '#7dcfff',
+            white: '#a9b1d6',
+            brightBlack: '#414868',
+            brightRed: '#f7768e',
+            brightGreen: '#9ece6a',
+            brightYellow: '#e0af68',
+            brightBlue: '#7aa2f7',
+            brightMagenta: '#bb9af7',
+            brightCyan: '#7dcfff',
+            brightWhite: '#c0caf5'
           }
-          safeDisposeWebglAddon(webglAddon)
-          console.warn('WebGL context lost; fell back to canvas renderer')
         })
-        terminal.loadAddon(webglAddon)
-        webglAddonRef.current = webglAddon
-      } catch (e) {
-        console.warn('WebGL addon failed to load, falling back to canvas renderer:', e)
-      }
 
-      // Fit after a short delay to ensure container has dimensions
-      setTimeout(() => {
-        if (fitAddonRef.current && terminalRef.current && !isDisposedRef.current) {
-          fitAddonRef.current.fit()
-          const { cols, rows } = terminalRef.current
-          window.electronAPI.resizePty(tabIdRef.current, cols, rows)
-        }
-      }, TERMINAL_FIT_DELAY)
+        const fitAddon = new FitAddon()
+        terminal.loadAddon(fitAddon)
+        terminal.open(containerRef.current)
 
-      // Wire up input to PTY (with AI mode interception)
-      terminal.onData((data) => {
-        if (isDisposedRef.current) return
+        terminalRef.current = terminal
+        fitAddonRef.current = fitAddon
 
-        // If in AI mode, handle input locally
-        if (aiStateRef.current !== 'idle') {
-          handleAIInput(data)
-          return
-        }
+        // Load Unicode11 addon for better unicode character width detection
+        const unicode11Addon = new Unicode11Addon()
+        terminal.loadAddon(unicode11Addon)
+        terminal.unicode.activeVersion = '11'
 
-        // Normal mode: send to PTY
-        window.electronAPI.writePty(tabIdRef.current, data)
-      })
+        // Load ligatures addon so supported fonts can render ligatures correctly
+        const ligaturesAddon = new LigaturesAddon()
+        terminal.loadAddon(ligaturesAddon)
 
-      // Restore scrollback content from previous session (before spawning PTY)
-      setTimeout(() => {
-        if (initialContentRef.current) {
-          terminal.write(initialContentRef.current)
-          initialContentRef.current = undefined // Only restore once
-        }
-      }, TERMINAL_FIT_DELAY)
+        // Load WebLinks addon to make URLs clickable
+        const webLinksAddon = new WebLinksAddon()
+        terminal.loadAddon(webLinksAddon)
 
-      // Spawn PTY only if not already spawned (check global set)
-      if (!spawnedPtys.has(tabIdRef.current)) {
-        spawnedPtys.add(tabIdRef.current)
-        window.electronAPI
-          .spawnPty(tabIdRef.current, initialCwdRef.current, shellRef.current)
-          .then((response) => {
-            if (onShellReadyRef.current) {
-              onShellReadyRef.current(response.shell)
+        // Load Serialize addon for session persistence
+        const serializeAddon = new SerializeAddon()
+        terminal.loadAddon(serializeAddon)
+        serializeAddonRef.current = serializeAddon
+
+        // Load WebGL addon for better performance
+        try {
+          const webglAddon = new WebglAddon()
+          webglAddon.onContextLoss(() => {
+            // Force fallback to non-WebGL renderer after context loss.
+            if (webglAddonRef.current === webglAddon) {
+              webglAddonRef.current = null
             }
+            safeDisposeWebglAddon(webglAddon)
+            console.warn('WebGL context lost; fell back to canvas renderer')
           })
-      }
+          terminal.loadAddon(webglAddon)
+          webglAddonRef.current = webglAddon
+        } catch (e) {
+          console.warn('WebGL addon failed to load, falling back to canvas renderer:', e)
+        }
 
-      // Focus if active
-      if (isActiveRef.current) {
-        terminal.focus()
-      }
+        // Fit after a short delay to ensure container has dimensions
+        setTimeout(() => {
+          if (fitAddonRef.current && terminalRef.current && !isDisposedRef.current) {
+            fitAddonRef.current.fit()
+            const { cols, rows } = terminalRef.current
+            window.electronAPI.resizePty(tabIdRef.current, cols, rows)
+          }
+        }, TERMINAL_FIT_DELAY)
+
+        // Wire up input to PTY (with AI mode interception)
+        terminal.onData((data) => {
+          if (isDisposedRef.current) return
+
+          // If in AI mode, handle input locally
+          if (aiStateRef.current !== 'idle') {
+            handleAIInput(data)
+            return
+          }
+
+          // Normal mode: send to PTY
+          window.electronAPI.writePty(tabIdRef.current, data)
+        })
+
+        // Restore scrollback content from previous session (before spawning PTY)
+        setTimeout(() => {
+          if (initialContentRef.current) {
+            terminal.write(initialContentRef.current)
+            initialContentRef.current = undefined // Only restore once
+          }
+        }, TERMINAL_FIT_DELAY)
+
+        // Spawn PTY only if not already spawned (check global set)
+        if (!spawnedPtys.has(tabIdRef.current)) {
+          spawnedPtys.add(tabIdRef.current)
+          window.electronAPI
+            .spawnPty(tabIdRef.current, initialCwdRef.current, shellRef.current)
+            .then((response) => {
+              if (onShellReadyRef.current) {
+                onShellReadyRef.current(response.shell)
+              }
+            })
+        }
+
+        // Focus if active
+        if (isActiveRef.current) {
+          terminal.focus()
+        }
+      })()
+        .finally(() => {
+          isInitializingRef.current = false
+        })
     },
     [handleAIInput, aiStateRef]
   )

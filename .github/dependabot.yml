@@ -11,6 +11,12 @@ updates:
     labels:
       - dependencies
 
+    groups:
+      patch-and-minor:
+        update-types:
+          - "patch"
+          - "minor"
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
