@@ -44,6 +44,7 @@ let initialized = false
 let listenersAttached = false
 let updateCheckTimer: ReturnType<typeof setInterval> | null = null
 let manualCheckRequested = false
+let manualDownloadInProgress = false
 let checkInFlight = false
 
 function getUpdateChannelConfiguration(releaseChannel: string): { updaterChannel: string; allowPrerelease: boolean } {
@@ -133,23 +134,28 @@ function attachUpdaterListeners(deps: UpdateServiceDependencies): void {
   deps.updater.on('update-available', () => {
     if (!manualCheckRequested) return
     manualCheckRequested = false
+    manualDownloadInProgress = true
     void deps.showMessageBox(getUpdateAvailableMessage())
   })
 
   deps.updater.on('update-not-available', () => {
     if (!manualCheckRequested) return
     manualCheckRequested = false
+    manualDownloadInProgress = false
     void deps.showMessageBox(getNoUpdatesFoundMessage())
   })
 
   deps.updater.on('error', (error: unknown) => {
     deps.logger.error('[updater] error:', error)
-    if (!manualCheckRequested) return
+    if (!manualCheckRequested && !manualDownloadInProgress) return
     manualCheckRequested = false
+    manualDownloadInProgress = false
     void deps.showMessageBox(getUpdateCheckErrorMessage(error))
   })
 
   deps.updater.on('update-downloaded', () => {
+    manualCheckRequested = false
+    manualDownloadInProgress = false
     void promptAndInstallUpdate(deps.showMessageBox, () => deps.updater.quitAndInstall())
   })
 }
@@ -168,13 +174,17 @@ async function checkForUpdates(deps: UpdateServiceDependencies, manual: boolean)
   }
 
   checkInFlight = true
-  manualCheckRequested = manual
+  if (manual) {
+    manualCheckRequested = true
+    manualDownloadInProgress = false
+  }
   try {
     await deps.updater.checkForUpdates()
   } catch (error) {
     deps.logger.error('[updater] check failed:', error)
-    if (manual && manualCheckRequested) {
+    if (manual && (manualCheckRequested || manualDownloadInProgress)) {
       manualCheckRequested = false
+      manualDownloadInProgress = false
       await deps.showMessageBox(getUpdateCheckErrorMessage(error))
     }
   } finally {
@@ -224,6 +234,7 @@ export function __resetUpdateServiceForTests(): void {
   initialized = false
   listenersAttached = false
   manualCheckRequested = false
+  manualDownloadInProgress = false
   checkInFlight = false
   if (updateCheckTimer) {
     clearInterval(updateCheckTimer)
