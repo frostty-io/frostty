@@ -6,6 +6,7 @@ out
 
 # Packaging output (electron-builder distributables)
 dist
+dist-*
 
 # Build resources (generated icons for electron-builder)
 build/*

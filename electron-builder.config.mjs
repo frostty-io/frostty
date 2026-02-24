@@ -4,6 +4,8 @@ const updateChannel = isCanary ? 'canary' : 'latest'
 const macIcon = isCanary ? 'build/icon_canary.icns' : 'build/icon.icns'
 const winIcon = isCanary ? 'build/icon_canary.ico' : 'build/icon.ico'
 const linuxIcon = isCanary ? 'build/icon_canary.png' : 'build/icon.png'
+const macArtifactPrefix = isCanary ? 'Frostty-Canary' : 'Frostty'
+const macArtifactName = `${macArtifactPrefix}-\${version}-\${arch}-\${os}.\${ext}`
 
 /** @type {import('electron-builder').Configuration} */
 const config = {
@@ -41,6 +43,7 @@ const config = {
   ],
   mac: {
     icon: macIcon,
+    artifactName: macArtifactName,
     category: 'public.app-category.developer-tools',
     x64ArchFiles: '**/node_modules/node-pty/**/darwin-*/**',
     target: [
