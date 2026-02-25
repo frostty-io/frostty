@@ -69,24 +69,6 @@ export default function GitBar({ cwd }: GitBarProps) {
     return () => clearInterval(interval)
   }, [fetchStatus, fetchBranches, status?.isRepo])
 
-  // Keyboard shortcuts for editors
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Shift + V = Open in VS Code
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'v') {
-        e.preventDefault()
-        openInVSCode()
-      }
-      // Cmd/Ctrl + Shift + C = Open in Cursor
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault()
-        openInCursor()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [openInVSCode, openInCursor])
-
   // Wrap operations with loading state tracking
   const withLoading = useCallback(async (op: () => Promise<void>) => {
     setOperationState('loading')

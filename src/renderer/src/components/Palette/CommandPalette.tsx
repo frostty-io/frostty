@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import type { GitOperationResult, Profile } from '../../../../shared/ipc'
 import { BasePalette } from './BasePalette'
 import { usePlatform } from '@/hooks/usePlatform'
+import { getShortcutDisplay } from '@/lib/shortcutRegistry'
 
 interface Command {
   id: string
@@ -61,7 +62,7 @@ export default function CommandPalette({
   activeCwd,
   profiles
 }: CommandPaletteProps) {
-  const { modSymbol } = usePlatform()
+  const { isMac } = usePlatform()
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([])
@@ -106,7 +107,7 @@ export default function CommandPalette({
         name: `Tabs: New Tab with ${profile.name}`,
         description: `${profile.shell === 'system' ? 'System shell' : profile.shell} · ${profile.homeDirectory}`,
         icon: User as LucideIcon,
-        shortcut: profile.id === 'default' ? [modSymbol, 'T'] : undefined,
+        shortcut: profile.id === 'default' ? getShortcutDisplay('newTab', isMac) : undefined,
         action: () => {
           onNewTab(profile.id)
           onOpenChange(false)
@@ -127,7 +128,7 @@ export default function CommandPalette({
         name: 'Window: New Window',
         description: 'Open a new Frostty window',
         icon: AppWindow as LucideIcon,
-        shortcut: [modSymbol, '⇧', 'N'],
+        shortcut: getShortcutDisplay('newWindow', isMac),
         action: () => {
           window.electronAPI.newWindow()
           onOpenChange(false)
@@ -138,7 +139,7 @@ export default function CommandPalette({
         name: 'Window: Close Window',
         description: 'Close the current window',
         icon: X,
-        shortcut: [modSymbol, '⇧', 'W'],
+        shortcut: getShortcutDisplay('closeWindow', isMac),
         action: () => {
           window.electronAPI.closeWindow()
           onOpenChange(false)
@@ -159,7 +160,7 @@ export default function CommandPalette({
         name: 'Tabs: Close Tab',
         description: 'Close the current terminal tab',
         icon: X,
-        shortcut: [modSymbol, 'W'],
+        shortcut: getShortcutDisplay('closeTab', isMac),
         action: () => {
           onCloseTab()
           onOpenChange(false)
@@ -180,7 +181,7 @@ export default function CommandPalette({
         name: 'Tabs: Restore Closed Tab',
         description: 'Reopen the most recently closed tab',
         icon: RotateCcw,
-        shortcut: [modSymbol, '⇧', 'T'],
+        shortcut: getShortcutDisplay('restoreClosedTab', isMac),
         action: () => {
           onRestoreClosedTab()
           onOpenChange(false)
@@ -191,7 +192,7 @@ export default function CommandPalette({
         name: 'Tabs: Clear Tab',
         description: 'Clear the current terminal tab',
         icon: Eraser,
-        shortcut: [modSymbol, 'L'],
+        shortcut: getShortcutDisplay('clearTerminal', isMac),
         action: () => {
           onClearTab()
           onOpenChange(false)
@@ -202,7 +203,7 @@ export default function CommandPalette({
         name: 'Open Project',
         description: 'Open a git repository in a new tab',
         icon: FolderGit2,
-        shortcut: [modSymbol, 'P'],
+        shortcut: getShortcutDisplay('projectPalette', isMac),
         action: () => {
           onOpenChange(false)
           onOpenProjectPalette()
@@ -213,7 +214,7 @@ export default function CommandPalette({
         name: 'Settings',
         description: 'Configure defaults and preferences',
         icon: Settings,
-        shortcut: [modSymbol, ','],
+        shortcut: getShortcutDisplay('settings', isMac),
         action: () => {
           onOpenSettings()
           onOpenChange(false)
@@ -245,7 +246,7 @@ export default function CommandPalette({
         name: 'Editor: Open in VS Code',
         description: 'Open current directory in Visual Studio Code',
         icon: VSCodeIcon,
-        shortcut: [modSymbol, '⇧', 'V'],
+        shortcut: getShortcutDisplay('openVSCode', isMac),
         action: async () => {
           if (!activeCwd) {
             toast.error('No active directory')
@@ -265,7 +266,7 @@ export default function CommandPalette({
         name: 'Editor: Open in Cursor',
         description: 'Open current directory in Cursor',
         icon: CursorIcon,
-        shortcut: [modSymbol, '⇧', 'C'],
+        shortcut: getShortcutDisplay('openCursor', isMac),
         action: async () => {
           if (!activeCwd) {
             toast.error('No active directory')
@@ -283,7 +284,7 @@ export default function CommandPalette({
     ]
 
     return baseCommands
-  }, [onNewTab, onCloseTab, onClearTab, onCloseAllTabs, onRestoreClosedTab, onOpenSettings, onOpenProjectPalette, onOpenChange, runGitOperation, activeCwd, profiles, modSymbol])
+  }, [onNewTab, onCloseTab, onClearTab, onCloseAllTabs, onRestoreClosedTab, onOpenSettings, onOpenProjectPalette, onOpenChange, runGitOperation, activeCwd, profiles, isMac])
 
   // Build display list with recent commands at top, separated from rest
   type DisplayItem = { type: 'command'; command: Command } | { type: 'separator' } | { type: 'heading'; label: string }

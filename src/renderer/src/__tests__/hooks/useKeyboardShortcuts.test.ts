@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../stores/useSettingsStore'
@@ -11,19 +11,41 @@ import {
   TERMINAL_FONT_SIZE_MIN
 } from '../../../../shared/constants'
 
-function dispatchModKey(
+const ORIGINAL_PLATFORM = navigator.platform
+
+function setPlatform(platform: string): void {
+  Object.defineProperty(window.navigator, 'platform', {
+    value: platform,
+    configurable: true
+  })
+}
+
+function dispatchKey(
   key: string,
   options: Partial<KeyboardEventInit> = {}
 ): void {
   act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', {
       key,
-      ctrlKey: true,
       bubbles: true,
       cancelable: true,
       ...options
     }))
   })
+}
+
+function dispatchCtrlKey(
+  key: string,
+  options: Partial<KeyboardEventInit> = {}
+): void {
+  dispatchKey(key, { ctrlKey: true, ...options })
+}
+
+function dispatchCmdKey(
+  key: string,
+  options: Partial<KeyboardEventInit> = {}
+): void {
+  dispatchKey(key, { metaKey: true, ...options })
 }
 
 function getProfileFontSize(profileId: string): number {
@@ -34,6 +56,7 @@ function getProfileFontSize(profileId: string): number {
 describe('useKeyboardShortcuts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setPlatform('Linux x86_64')
 
     useSettingsStore.setState({
       settings: {
@@ -67,23 +90,27 @@ describe('useKeyboardShortcuts', () => {
     })
   })
 
+  afterEach(() => {
+    setPlatform(ORIGINAL_PLATFORM)
+  })
+
   it('zooms in with Ctrl/Cmd + =', () => {
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('=')
+    dispatchCtrlKey('=')
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT + 1)
     unmount()
   })
 
   it('zooms in with Ctrl/Cmd + Shift + = (+)', () => {
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('+', { shiftKey: true })
+    dispatchCtrlKey('+', { shiftKey: true })
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT + 1)
     unmount()
   })
 
   it('zooms out with Ctrl/Cmd + -', () => {
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('-')
+    dispatchCtrlKey('-')
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT - 1)
     unmount()
   })
@@ -101,7 +128,7 @@ describe('useKeyboardShortcuts', () => {
     }))
 
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('0')
+    dispatchCtrlKey('0')
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT)
     unmount()
   })
@@ -119,7 +146,7 @@ describe('useKeyboardShortcuts', () => {
     }))
 
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('-')
+    dispatchCtrlKey('-')
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_MIN)
 
     useSettingsStore.setState((state) => ({
@@ -133,7 +160,7 @@ describe('useKeyboardShortcuts', () => {
       }
     }))
 
-    dispatchModKey('=')
+    dispatchCtrlKey('=')
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_MAX)
     unmount()
   })
@@ -143,20 +170,57 @@ describe('useKeyboardShortcuts', () => {
     useTabStore.getState().addTab(workPane)
 
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('=')
+    dispatchCtrlKey('=')
 
     expect(getProfileFontSize('work')).toBe(TERMINAL_FONT_SIZE_DEFAULT + 3)
     expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT)
     unmount()
   })
 
-  it('preserves existing Shift+P behavior for command palette', () => {
+  it('opens command palette with Ctrl+Shift+P on non-mac', () => {
     const { unmount } = renderHook(() => useKeyboardShortcuts())
-    dispatchModKey('P', { shiftKey: true })
-
+    dispatchCtrlKey('p', { shiftKey: true })
     expect(useUIStore.getState().commandPaletteOpen).toBe(true)
-    expect(getProfileFontSize('default')).toBe(TERMINAL_FONT_SIZE_DEFAULT)
+    unmount()
+  })
 
+  it('uses remapped Ctrl+Shift+O for project palette on non-mac', () => {
+    const { unmount } = renderHook(() => useKeyboardShortcuts())
+    dispatchCtrlKey('o', { shiftKey: true })
+    expect(useUIStore.getState().projectPaletteOpen).toBe(true)
+    unmount()
+  })
+
+  it('does not open project palette with Ctrl+P on non-mac', () => {
+    const { unmount } = renderHook(() => useKeyboardShortcuts())
+    dispatchCtrlKey('p')
+    expect(useUIStore.getState().projectPaletteOpen).toBe(false)
+    unmount()
+  })
+
+  it('uses remapped Ctrl+Shift+T for new tab on non-mac', () => {
+    const { unmount } = renderHook(() => useKeyboardShortcuts())
+    dispatchCtrlKey('t', { shiftKey: true })
+    expect(useTabStore.getState().tabs).toHaveLength(1)
+    unmount()
+  })
+
+  it('does not open a new tab with Ctrl+T on non-mac', () => {
+    const { unmount } = renderHook(() => useKeyboardShortcuts())
+    dispatchCtrlKey('t')
+    expect(useTabStore.getState().tabs).toHaveLength(0)
+    unmount()
+  })
+
+  it('uses cmd-only bindings on macOS', () => {
+    setPlatform('MacIntel')
+    const { unmount } = renderHook(() => useKeyboardShortcuts())
+
+    dispatchCtrlKey('p')
+    expect(useUIStore.getState().projectPaletteOpen).toBe(false)
+
+    dispatchCmdKey('p')
+    expect(useUIStore.getState().projectPaletteOpen).toBe(true)
     unmount()
   })
 })
