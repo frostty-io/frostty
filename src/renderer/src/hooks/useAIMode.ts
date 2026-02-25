@@ -6,6 +6,7 @@ import {
   AI_SPINNER_INTERVAL,
   AI_ERROR_DISPLAY_DURATION
 } from '../../../shared/constants'
+import { isMacPlatform } from '@/lib/shortcutRegistry'
 
 // AI mode state types
 type AIState = 'idle' | 'input' | 'loading'
@@ -27,6 +28,10 @@ export function useAIMode({
   openRouterModel,
   currentCwd
 }: UseAIModeOptions) {
+  const settingsShortcut = typeof navigator !== 'undefined' && isMacPlatform(navigator.platform)
+    ? 'Cmd+,'
+    : 'Ctrl+,'
+
   // AI mode refs
   const aiStateRef = useRef<AIState>('idle')
   const aiInputBufferRef = useRef('')
@@ -213,7 +218,7 @@ export function useAIMode({
 
     if (!openRouterApiKeyRef.current) {
       terminal.write(
-        '\r\n\x1b[31mError:\x1b[0m OpenRouter API key not configured. Set it in Settings (Cmd+,)\r\n'
+        `\r\n\x1b[31mError:\x1b[0m OpenRouter API key not configured. Set it in Settings (${settingsShortcut})\r\n`
       )
       return
     }
@@ -224,7 +229,7 @@ export function useAIMode({
     const aiPrompt = 'AI> '
     terminal.write('\x1b[36m' + aiPrompt + '\x1b[0m')
     aiCharsWrittenRef.current = aiPrompt.length
-  }, [terminalRef])
+  }, [terminalRef, settingsShortcut])
 
   // Cleanup AI spinner on unmount
   useEffect(() => {

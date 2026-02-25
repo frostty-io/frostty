@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/tooltip'
 import { Kbd } from '@/components/ui/kbd'
 import { VSCodeIcon, CursorIcon } from '@/components/icons'
+import { usePlatform } from '@/hooks/usePlatform'
+import { getShortcutDisplay } from '@/lib/shortcutRegistry'
 import type { GitStatus } from '@shared/ipc'
 
 export type OperationState = 'idle' | 'loading' | 'success' | 'error'
@@ -30,8 +32,11 @@ export default function GitActions({
   onOpenInVSCode,
   onOpenInCursor
 }: GitActionsProps) {
+  const { isMac } = usePlatform()
   const needsPull = status.behind > 0
   const isLoading = operationState === 'loading'
+  const openInVSCodeShortcut = getShortcutDisplay('openVSCode', isMac).join('+')
+  const openInCursorShortcut = getShortcutDisplay('openCursor', isMac).join('+')
 
   return (
     <div className="flex items-center gap-1 ml-auto">
@@ -52,7 +57,7 @@ export default function GitActions({
             </TooltipTrigger>
             <TooltipContent side="bottom" className="flex items-center gap-2 border-white/10">
               <span>Open in VS Code</span>
-              <Kbd>⌘⇧V</Kbd>
+              <Kbd>{openInVSCodeShortcut}</Kbd>
             </TooltipContent>
           </Tooltip>
 
@@ -72,7 +77,7 @@ export default function GitActions({
             </TooltipTrigger>
             <TooltipContent side="bottom" className="flex items-center gap-2 border-white/10">
               <span>Open in Cursor</span>
-              <Kbd>⌘⇧C</Kbd>
+              <Kbd>{openInCursorShortcut}</Kbd>
             </TooltipContent>
           </Tooltip>
         </div>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import frosttyLogo from '@resources/logo.png'
 import frosttyCanaryLogo from '@resources/logo_canary.png'
 import { usePlatform } from '@/hooks/usePlatform'
+import { getShortcutDisplay } from '@/lib/shortcutRegistry'
 import { getRuntimeLogoFilename } from '../../../shared/releaseChannel'
 
 interface KeyboardShortcut {
@@ -38,7 +39,7 @@ function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
 }
 
 export default function EmptyState() {
-  const { modSymbol } = usePlatform()
+  const { isMac } = usePlatform()
   const [visible, setVisible] = useState(false)
   const releaseChannel = typeof __FROSTTY_RELEASE_CHANNEL__ === 'string' ? __FROSTTY_RELEASE_CHANNEL__ : 'stable'
   const logoSrc = getRuntimeLogoFilename(releaseChannel) === 'logo_canary.png'
@@ -48,35 +49,35 @@ export default function EmptyState() {
   const shortcuts: KeyboardShortcut[] = useMemo(() => [
     {
       label: 'Command Palette',
-      keys: [modSymbol, 'Shift', 'P'],
+      keys: getShortcutDisplay('commandPalette', isMac),
       icon: <Search className="w-4 h-4" />,
     },
     {
       label: 'Project Palette',
-      keys: [modSymbol, 'P'],
+      keys: getShortcutDisplay('projectPalette', isMac),
       icon: <FolderGit2 className="w-4 h-4" />,
     },
     {
       label: 'Settings',
-      keys: [modSymbol, ','],
+      keys: getShortcutDisplay('settings', isMac),
       icon: <Settings className="w-4 h-4" />,
     },
     {
       label: 'Close Tab',
-      keys: [modSymbol, 'W'],
+      keys: getShortcutDisplay('closeTab', isMac),
       icon: <X className="w-4 h-4" />,
     },
     {
-      label: 'Previous Tab',
-      keys: [modSymbol, '↑'],
+      label: 'Previous Tab/Pane',
+      keys: getShortcutDisplay('prevTabOrPane', isMac),
       icon: <ArrowUp className="w-4 h-4" />,
     },
     {
-      label: 'Next Tab',
-      keys: [modSymbol, '↓'],
+      label: 'Next Tab/Pane',
+      keys: getShortcutDisplay('nextTabOrPane', isMac),
       icon: <ArrowDown className="w-4 h-4" />,
     },
-  ], [modSymbol])
+  ], [isMac])
 
   // Fade in animation on mount
   useEffect(() => {

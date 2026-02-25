@@ -61,19 +61,48 @@ export ZDOTDIR="$HOME"
 
   const zshRc = `# Frostty: source user's zshrc
 [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+
+# Prompt markers for keyboard selection boundaries.
+if [[ -z "\${__FROSTTY_OSC133_INITIALIZED:-}" ]]; then
+  __frostty_osc133_prompt_start() { printf '\\e]133;A\\a' }
+  __frostty_osc133_command_start() { printf '\\e]133;C\\a' }
+  autoload -Uz add-zsh-hook 2>/dev/null
+  add-zsh-hook precmd __frostty_osc133_prompt_start
+  add-zsh-hook preexec __frostty_osc133_command_start
+  PROMPT="\${PROMPT}%{\\e]133;B\\a%}"
+  export __FROSTTY_OSC133_INITIALIZED=1
+fi
+
 # Emit initial OSC 7
 __frostty_osc7
 `
 
   const bashInit = `# Frostty shell integration
 __frostty_osc7() { printf '\\e]7;file://${hostname}%s\\a' "$PWD"; }
-PROMPT_COMMAND="__frostty_osc7\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
-__frostty_osc7
+__frostty_osc133_prompt_start() { printf '\\e]133;A\\a'; }
+__frostty_prompt_command() {
+  __frostty_osc7
+  __frostty_osc133_prompt_start
+}
 `
 
   const bashCombinedRc = `# Frostty bash integration
 source "$FROSTTY_BASH_INIT"
 [[ -f "$HOME/.bashrc" ]] && source "$HOME/.bashrc"
+
+# Install hooks after user bashrc so user prompt customizations are preserved.
+if [[ -n "$PROMPT_COMMAND" ]]; then
+  PROMPT_COMMAND="__frostty_prompt_command;$PROMPT_COMMAND"
+else
+  PROMPT_COMMAND="__frostty_prompt_command"
+fi
+
+case "$PS1" in
+  *$'\\e]133;B\\a'*) ;;
+  *) PS1="\${PS1}\\[\\e]133;B\\a\\]" ;;
+esac
+
+__frostty_osc7
 `
 
   const fishHook = `# Frostty fish shell integration

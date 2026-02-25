@@ -49,24 +49,24 @@ Frostty ships with a broad set of features out of the box:
 
 | Shortcut | Action |
 | :--- | :--- |
-| Cmd/Ctrl + T | New tab |
-| Cmd/Ctrl + W | Close tab or pane |
-| Cmd/Ctrl + L | Clear tab or pane |
-| Cmd/Ctrl + Shift + W | Close window |
-| Cmd/Ctrl + Shift + N | New window |
-| Cmd/Ctrl + Shift + T | Restore closed tab |
-| Cmd/Ctrl + D | Split / unsplit pane |
-| Cmd/Ctrl + = or + | Zoom in shell text |
-| Cmd/Ctrl + - | Zoom out shell text |
-| Cmd/Ctrl + 0 | Reset shell text zoom |
-| Cmd/Ctrl + Up/Down | Navigate panes or tabs |
-| Cmd/Ctrl + 1-9 | Switch to tab by index |
-| Cmd/Ctrl + Shift + P | Command palette |
-| Cmd/Ctrl + P | Project palette |
-| Cmd/Ctrl + K | AI command mode |
-| Cmd/Ctrl + , | Settings |
-| Cmd/Ctrl + Shift + V | Open in VS Code |
-| Cmd/Ctrl + Shift + C | Open in Cursor |
+| Cmd + T | New tab |
+| Cmd + W | Close tab or pane |
+| Cmd + L | Clear tab or pane |
+| Cmd + Shift + W | Close window |
+| Cmd + Shift + N | New window |
+| Cmd + Shift + T | Restore closed tab |
+| Cmd + D | Split / unsplit pane |
+| Cmd + = or + | Zoom in shell text |
+| Cmd + - | Zoom out shell text |
+| Cmd + 0 | Reset shell text zoom |
+| Cmd + Up/Down | Navigate panes or tabs |
+| Cmd + 1-9 | Switch to tab by index |
+| Cmd + Shift + P | Command palette |
+| Cmd + P | Project palette |
+| Cmd + K | AI command mode |
+| Cmd + , | Settings |
+| Cmd + Shift + V | Open in VS Code |
+| Cmd + Shift + C | Open in Cursor |
 
 ## Developing
 

@@ -16,6 +16,7 @@ import { usePlatform } from '@/hooks/usePlatform'
 import { useTabStore } from '@/stores/useTabStore'
 import { useSettingsStore } from '@/stores/useSettingsStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { getShortcutDisplay } from '@/lib/shortcutRegistry'
 import SortableTabItem from './TabItem'
 import TabBarFooter, { SystemStatsBar } from './TabBarFooter'
 
@@ -45,7 +46,7 @@ export default function TabBar({
   const settingsOpen = useUIStore((s) => s.settingsOpen)
   const { isMac } = usePlatform()
 
-  const newTabKey = isMac ? ['⌘', 'T'] : ['Ctrl', 'T']
+  const newTabKey = getShortcutDisplay('newTab', isMac)
 
   return (
     <div className="w-64 flex flex-col no-select bg-[hsl(var(--sidebar-bg))] border-r border-white/5">
@@ -89,9 +90,12 @@ export default function TabBar({
               <Plus className="w-4 h-4 transition-transform duration-200 group-hover/btn:scale-110" />
               <span className="flex-1 text-left">New tab</span>
               <KbdGroup>
-                <Kbd>{newTabKey[0]}</Kbd>
-                <span>+</span>
-                <Kbd>{newTabKey[1]}</Kbd>
+                {newTabKey.map((part, index) => (
+                  <span key={`${part}-${index}`} className="contents">
+                    {index > 0 && <span>+</span>}
+                    <Kbd>{part}</Kbd>
+                  </span>
+                ))}
               </KbdGroup>
             </Button>
 

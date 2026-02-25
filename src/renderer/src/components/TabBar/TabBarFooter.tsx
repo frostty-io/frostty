@@ -2,6 +2,7 @@ import { Cpu, HardDrive, Settings } from 'lucide-react'
 import { useSystemStats } from '@/hooks/useSystemStats'
 import { usePlatform } from '@/hooks/usePlatform'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
+import { getShortcutDisplay } from '@/lib/shortcutRegistry'
 
 function StatBar({ value, icon: Icon, color }: { value: number; icon: typeof Cpu; color: string }) {
   return (
@@ -50,7 +51,7 @@ interface TabBarFooterProps {
 
 export default function TabBarFooter({ settingsOpen, onSettingsClick }: TabBarFooterProps) {
   const { isMac } = usePlatform()
-  const modSymbol = isMac ? '⌘' : 'Ctrl'
+  const settingsShortcut = getShortcutDisplay('settings', isMac)
 
   return (
     <div className="shrink-0 border-t border-white/5">
@@ -66,14 +67,14 @@ export default function TabBarFooter({ settingsOpen, onSettingsClick }: TabBarFo
             : 'text-muted-foreground/60 hover:text-muted-foreground'
           }
         `}
-        title={`Settings (${modSymbol}+,)`}
+        title={`Settings (${settingsShortcut.join('+')})`}
       >
         <Settings className={`w-3.5 h-3.5 transition-all duration-200 ${settingsOpen ? 'text-accent rotate-90' : 'group-hover/settings:rotate-45'}`} />
         <span className="text-sm font-medium flex-1 text-left">Settings</span>
         <KbdGroup>
-          <Kbd className={settingsOpen ? 'bg-[hsl(var(--sidebar-bg))] text-accent border-muted' : ''}>{modSymbol}</Kbd>
+          <Kbd className={settingsOpen ? 'bg-[hsl(var(--sidebar-bg))] text-accent border-muted' : ''}>{settingsShortcut[0]}</Kbd>
           <span>+</span>
-          <Kbd className={settingsOpen ? 'bg-[hsl(var(--sidebar-bg))] text-accent border-muted' : ''}>,</Kbd>
+          <Kbd className={settingsOpen ? 'bg-[hsl(var(--sidebar-bg))] text-accent border-muted' : ''}>{settingsShortcut[1]}</Kbd>
         </KbdGroup>
       </button>
     </div>

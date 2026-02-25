@@ -1,5 +1,6 @@
 import { Menu, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc'
+import { getShortcutForPlatform } from '../shared/shortcutRegistry'
 import { createWindow, closeWindowGracefully, restoreLastClosedWindow } from './windowManager'
 import { checkForUpdatesManual } from './services/updateService'
 
@@ -18,9 +19,9 @@ function createCheckForUpdatesMenuItem(): Electron.MenuItemConstructorOptions {
  * Build and set the native application menu.
  * Call once after app.whenReady().
  *
- * Shortcuts like Cmd+T, Cmd+W, Cmd+Shift+W, Cmd+, are already handled by the
- * renderer's keyboard-shortcuts hook (which has richer context, e.g. checking
- * whether the settings pane is open).  We still list the accelerators in the
+ * Shortcuts are handled by the renderer's keyboard-shortcuts hook (which has
+ * richer context, e.g. checking whether the settings pane is open). We still
+ * list accelerators in the
  * menu for discoverability, but set `registerAccelerator: false` so that
  * Electron doesn't intercept the key events before they reach the renderer.
  *
@@ -28,6 +29,12 @@ function createCheckForUpdatesMenuItem(): Electron.MenuItemConstructorOptions {
  * item directly (rather than using the keyboard shortcut).
  */
 export function setupApplicationMenu(): void {
+  const settingsAccelerator = getShortcutForPlatform('settings', isMac).accelerator
+  const newWindowAccelerator = getShortcutForPlatform('newWindow', isMac).accelerator
+  const newTabAccelerator = getShortcutForPlatform('newTab', isMac).accelerator
+  const closeTabAccelerator = getShortcutForPlatform('closeTab', isMac).accelerator
+  const closeWindowAccelerator = getShortcutForPlatform('closeWindow', isMac).accelerator
+
   const template: Electron.MenuItemConstructorOptions[] = [
     // ── macOS app menu ──────────────────────────────────────────────────────
     ...(isMac
@@ -40,7 +47,7 @@ export function setupApplicationMenu(): void {
               { type: 'separator' as const },
               {
                 label: 'Settings...',
-                accelerator: 'CmdOrCtrl+,',
+                accelerator: settingsAccelerator,
                 registerAccelerator: false,
                 click: (): void => {
                   const win = BrowserWindow.getFocusedWindow()
@@ -66,7 +73,7 @@ export function setupApplicationMenu(): void {
       submenu: [
         {
           label: 'New Window',
-          accelerator: 'CmdOrCtrl+Shift+N',
+          accelerator: newWindowAccelerator,
           registerAccelerator: false,
           click: (): void => {
             createWindow()
@@ -74,7 +81,7 @@ export function setupApplicationMenu(): void {
         },
         {
           label: 'New Tab',
-          accelerator: 'CmdOrCtrl+T',
+          accelerator: newTabAccelerator,
           registerAccelerator: false,
           click: (): void => {
             const win = BrowserWindow.getFocusedWindow()
@@ -84,7 +91,7 @@ export function setupApplicationMenu(): void {
         { type: 'separator' },
         {
           label: 'Close Tab',
-          accelerator: 'CmdOrCtrl+W',
+          accelerator: closeTabAccelerator,
           registerAccelerator: false,
           click: (): void => {
             const win = BrowserWindow.getFocusedWindow()
@@ -93,7 +100,7 @@ export function setupApplicationMenu(): void {
         },
         {
           label: 'Close Window',
-          accelerator: 'CmdOrCtrl+Shift+W',
+          accelerator: closeWindowAccelerator,
           registerAccelerator: false,
           click: (): void => {
             const win = BrowserWindow.getFocusedWindow()
