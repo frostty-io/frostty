@@ -349,7 +349,9 @@ export default function CommandPalette({
   useEffect(() => {
     const list = document.querySelector('[data-palette-list="commands"]')
     if (list) {
-      const selectedElement = list.children[selectedIndex] as HTMLElement
+      const selectedElement = list.querySelector(
+        `[data-palette-index="${selectedIndex}"]`
+      ) as HTMLElement | null
       if (selectedElement) {
         selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
@@ -442,6 +444,7 @@ export default function CommandPalette({
             return (
               <button
                 key={command.id}
+                data-palette-index={currentCommandIndex}
                 onClick={() => executeCommand(command)}
                 onMouseEnter={() => setSelectedIndex(currentCommandIndex)}
                 className={cn(

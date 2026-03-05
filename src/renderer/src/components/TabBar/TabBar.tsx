@@ -111,7 +111,14 @@ export default function TabBar({
                     <ChevronDown className="w-4 h-4 outline-none" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="bottom" className="w-56">
+                <DropdownMenuContent
+                  align="start"
+                  side="bottom"
+                  className="w-56"
+                  onCloseAutoFocus={(event) => {
+                      event.preventDefault()
+                  }}
+                >
                   <DropdownMenuLabel className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
                     New tab with profile
                   </DropdownMenuLabel>
