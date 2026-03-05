@@ -97,7 +97,9 @@ export default function ProjectPalette({
   useEffect(() => {
     const list = document.querySelector('[data-palette-list="projects"]')
     if (list) {
-      const selectedElement = list.children[selectedIndex] as HTMLElement
+      const selectedElement = list.querySelector(
+        `[data-palette-index="${selectedIndex}"]`
+      ) as HTMLElement | null
       if (selectedElement) {
         selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
@@ -198,6 +200,7 @@ export default function ProjectPalette({
             return (
               <button
                 key={repo.path}
+                data-palette-index={currentProjectIndex}
                 onClick={() => selectRepo(repo)}
                 onMouseEnter={() => setSelectedIndex(currentProjectIndex)}
                 className={cn(
