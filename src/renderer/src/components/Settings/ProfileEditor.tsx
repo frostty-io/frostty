@@ -211,7 +211,7 @@ export function ProfileEditor({
                 setLocalHomeDir(normalized)
                 onUpdate({ ...profile, homeDirectory: normalized })
               }}
-              placeholder="~"
+              placeholder="~/Documents"
               className={cn(INPUT_CLASSES, 'pl-10 pr-3')}
             />
           </div>

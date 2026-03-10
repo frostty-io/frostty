@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { BrowserWindow } from 'electron'
-import { IPC_CHANNELS, ShellType, AvailableShell } from '../shared/ipc'
+import { IPC_CHANNELS, ShellType, AvailableShell, DEFAULT_PROFILE } from '../shared/ipc'
 import {
   ensureShellIntegration,
   getShellEnvironment,
@@ -122,6 +122,7 @@ const SHELL_PATHS: Record<Exclude<ShellType, 'system'>, string[]> = {
  */
 function getShellPath(shellType: Exclude<ShellType, 'system'>): string | null {
   const paths = SHELL_PATHS[shellType]
+  if (!paths) return null
   for (const shellPath of paths) {
     if (shellExists(shellPath)) {
       return shellPath
@@ -373,7 +374,7 @@ export async function getCwd(tabId: string): Promise<string> {
 
   const ptyProcess = ptyProcesses.get(tabId)
   if (!ptyProcess) {
-    return '~'
+    return DEFAULT_PROFILE.homeDirectory
   }
 
   try {

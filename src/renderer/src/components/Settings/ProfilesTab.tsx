@@ -44,7 +44,7 @@ export function ProfilesTab({ settings, onSave }: ProfilesTabProps) {
       id: generateProfileId(),
       name: 'New Profile',
       shell: 'system',
-      homeDirectory: '~',
+      homeDirectory: '~/Documents',
       tabColor: '#3b82f6',
       shellFontSize: TERMINAL_FONT_SIZE_DEFAULT
     }

@@ -210,7 +210,7 @@ export const DEFAULT_PROFILE: Profile = {
   id: 'default',
   name: 'Default',
   shell: 'system',
-  homeDirectory: '~',
+  homeDirectory: '~/Documents',
   tabColor: '#3b82f6',
   shellFontSize: TERMINAL_FONT_SIZE_DEFAULT
 }
