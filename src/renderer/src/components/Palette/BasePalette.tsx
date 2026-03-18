@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog'
 import { Kbd } from '../ui/kbd'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,7 @@ export interface BasePaletteProps {
   emptyMessage?: string
   loading?: boolean
   loadingMessage?: string
+  onCloseAutoFocus?: (event: Event) => void
 }
 
 export function BasePalette({
@@ -35,16 +36,10 @@ export function BasePalette({
   onKeyDown,
   emptyMessage,
   loading,
-  loadingMessage = 'Loading...'
+  loadingMessage = 'Loading...',
+  onCloseAutoFocus
 }: BasePaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Focus input when palette opens
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
-  }, [open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,6 +56,11 @@ export function BasePalette({
           'data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
           '[&>button:last-child]:hidden' // Hide default close button
         )}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          inputRef.current?.focus()
+        }}
+        onCloseAutoFocus={onCloseAutoFocus}
         onKeyDown={onKeyDown}
       >
         {/* Hidden title for accessibility */}

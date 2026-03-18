@@ -170,8 +170,8 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(IPC_CHANNELS.GIT_BRANCHES, cwd)
   },
 
-  gitCheckout: async (cwd: string, branch: string, create?: boolean): Promise<GitOperationResult> => {
-    return ipcRenderer.invoke(IPC_CHANNELS.GIT_CHECKOUT, cwd, branch, create)
+  gitCheckout: async (cwd: string, branch: string, create?: boolean, paneId?: string): Promise<GitOperationResult> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.GIT_CHECKOUT, cwd, branch, create, paneId)
   },
 
   gitPull: async (cwd: string): Promise<GitOperationResult> => {

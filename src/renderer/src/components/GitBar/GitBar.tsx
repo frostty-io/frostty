@@ -13,20 +13,24 @@ import {
 } from 'lucide-react'
 import { useGitOperations } from '@/hooks/useGitOperations'
 import { useEditorIntegration } from '@/hooks/useEditorIntegration'
+import { useUIStore } from '@/stores/useUIStore'
 import type { GitStatus, GitBranch as GitBranchType } from '@shared/ipc'
 import BranchSelector from './BranchSelector'
 import GitActions, { type OperationState } from './GitActions'
 
 interface GitBarProps {
   cwd: string
+  paneId?: string
 }
 
-export default function GitBar({ cwd }: GitBarProps) {
+export default function GitBar({ cwd, paneId }: GitBarProps) {
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [branches, setBranches] = useState<GitBranchType[]>([])
   const [operationState, setOperationState] = useState<OperationState>('idle')
+  const branchSelectorOpen = useUIStore((s) => s.branchSelectorOpen)
+  const branchSelectorCreateMode = useUIStore((s) => s.branchSelectorCreateMode)
 
-  const gitOps = useGitOperations(cwd)
+  const gitOps = useGitOperations(cwd, paneId)
   const { openInVSCode, openInCursor } = useEditorIntegration(cwd)
 
   // Fetch git status
@@ -103,6 +107,10 @@ export default function GitBar({ cwd }: GitBarProps) {
     [withLoading, gitOps]
   )
 
+  const handleBranchSelectorOpenChange = useCallback((open: boolean) => {
+    useUIStore.getState().setBranchSelectorOpen(open)
+  }, [])
+
   // Don't render if not a git repo
   if (!status?.isRepo) {
     return (
@@ -128,6 +136,9 @@ export default function GitBar({ cwd }: GitBarProps) {
       <BranchSelector
         status={status}
         branches={branches}
+        open={branchSelectorOpen}
+        createMode={branchSelectorCreateMode}
+        onOpenChange={handleBranchSelectorOpenChange}
         onCheckout={handleCheckout}
         onCreateBranch={handleCreateBranch}
         onRefreshBranches={fetchBranches}

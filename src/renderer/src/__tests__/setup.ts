@@ -41,7 +41,7 @@ const mockElectronAPI = {
     profiles: [{ id: 'default', name: 'Default', shell: 'system', homeDirectory: '~', tabColor: '#3b82f6', shellFontSize: 12 }],
     defaultProfileId: 'default',
     openRouterApiKey: '',
-    openRouterModel: 'openai/gpt-oss-120b'
+    openRouterModel: 'openrouter/free'
   }),
   saveSettings: vi.fn().mockResolvedValue(undefined),
   loadRecents: vi.fn().mockResolvedValue({ recentCommands: [], recentProjects: [] }),

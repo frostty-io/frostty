@@ -1,16 +1,26 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, ChevronDown, GitBranch, Plus, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
-  GitBranch,
-  ChevronDown,
-  Check,
-  X,
-  Plus
-} from 'lucide-react'
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator
+} from '@/components/ui/command'
+import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 import type { GitStatus, GitBranch as GitBranchType } from '@shared/ipc'
 
 interface BranchSelectorProps {
   status: GitStatus
   branches: GitBranchType[]
+  open: boolean
+  createMode?: boolean
+  onOpenChange: (open: boolean) => void
   onCheckout: (branch: string) => void
   onCreateBranch: (name: string) => void
   onRefreshBranches: () => void
@@ -19,163 +29,214 @@ interface BranchSelectorProps {
 export default function BranchSelector({
   status,
   branches,
+  open,
+  createMode,
+  onOpenChange,
   onCheckout,
   onCreateBranch,
   onRefreshBranches
 }: BranchSelectorProps) {
-  const [showBranchDropdown, setShowBranchDropdown] = useState(false)
   const [newBranchName, setNewBranchName] = useState('')
+  const [branchSearch, setBranchSearch] = useState('')
   const [showNewBranchInput, setShowNewBranchInput] = useState(false)
 
-  const branchDropdownRef = useRef<HTMLDivElement>(null)
   const newBranchInputRef = useRef<HTMLInputElement>(null)
+  const branchSearchInputRef = useRef<HTMLInputElement>(null)
 
-  // Close dropdowns on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
-        setShowBranchDropdown(false)
-        setShowNewBranchInput(false)
-        setNewBranchName('')
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  const focusBranchSearch = () => {
+    requestAnimationFrame(() => {
+      branchSearchInputRef.current?.focus()
+    })
+  }
 
-  // Focus new branch input when shown
   useEffect(() => {
-    if (showNewBranchInput && newBranchInputRef.current) {
-      newBranchInputRef.current.focus()
+    if (showNewBranchInput) {
+      requestAnimationFrame(() => {
+        newBranchInputRef.current?.focus()
+      })
     }
   }, [showNewBranchInput])
 
+  useEffect(() => {
+    if (open && !showNewBranchInput && branchSearchInputRef.current) {
+      focusBranchSearch()
+    }
+  }, [open, showNewBranchInput])
+
+  useEffect(() => {
+    if (!open) {
+      setShowNewBranchInput(false)
+      setNewBranchName('')
+      setBranchSearch('')
+      return
+    }
+
+    setShowNewBranchInput(!!createMode)
+    setBranchSearch('')
+    onRefreshBranches()
+  }, [open, createMode, onRefreshBranches])
+
   const handleCheckout = (branch: string) => {
-    setShowBranchDropdown(false)
+    onOpenChange(false)
     onCheckout(branch)
   }
 
   const handleCreateBranch = () => {
     if (!newBranchName.trim()) return
     setShowNewBranchInput(false)
-    setShowBranchDropdown(false)
+    onOpenChange(false)
     onCreateBranch(newBranchName.trim())
     setNewBranchName('')
   }
 
-  const localBranches = branches.filter(b => !b.remote)
-  const remoteBranches = branches.filter(b => b.remote && !localBranches.some(lb => b.name.endsWith(`/${lb.name}`)))
+  const localBranches = branches.filter((b) => !b.remote)
+  const remoteBranches = branches.filter((b) => b.remote && !localBranches.some((lb) => b.name.endsWith(`/${lb.name}`)))
+  const normalizedBranchSearch = branchSearch.trim().toLowerCase()
+  const filteredLocalBranches = normalizedBranchSearch
+    ? localBranches.filter((branch) => branch.name.toLowerCase().includes(normalizedBranchSearch))
+    : localBranches
+  const filteredRemoteBranches = normalizedBranchSearch
+    ? remoteBranches.filter((branch) => branch.name.toLowerCase().includes(normalizedBranchSearch))
+    : remoteBranches
 
   return (
-    <div className="relative" ref={branchDropdownRef}>
-      <button
-        onClick={() => {
-          setShowBranchDropdown(!showBranchDropdown)
-          if (!showBranchDropdown) onRefreshBranches()
-        }}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/5 transition-colors group"
-      >
-        <GitBranch className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-xs font-mono font-medium text-foreground max-w-[120px] truncate">
-          {status.branch}
-        </span>
-        <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-      </button>
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-auto justify-start gap-1.5 px-2.5 py-1.5 text-left group">
+          <GitBranch className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="block max-w-[120px] truncate text-left text-xs font-mono font-medium text-foreground">
+            {status.branch}
+          </span>
+          <ChevronDown className="w-3 h-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+        </Button>
+      </PopoverTrigger>
 
-      {/* Branch dropdown */}
-      {showBranchDropdown && (
-        <div className="absolute top-full left-0 mt-1 w-64 max-h-80 overflow-y-auto bg-[hsl(var(--card))] border border-white/10 rounded-lg shadow-xl z-50">
-          {/* New branch input */}
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          if (!createMode) {
+            focusBranchSearch()
+          }
+        }}
+        className="w-72 overflow-hidden rounded-lg border border-white/10 bg-[hsl(var(--card))] p-0 shadow-xl"
+      >
+        <div className="border-b border-white/5 p-2">
           {showNewBranchInput ? (
-            <div className="p-2 border-b border-white/5">
-              <div className="flex gap-1">
-                <input
-                  ref={newBranchInputRef}
-                  type="text"
-                  value={newBranchName}
-                  onChange={(e) => setNewBranchName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateBranch()
-                    if (e.key === 'Escape') {
-                      setShowNewBranchInput(false)
-                      setNewBranchName('')
-                    }
-                  }}
-                  placeholder="New branch name..."
-                  className="flex-1 px-2 py-1 text-xs bg-black/20 border border-white/10 rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50"
-                />
-                <button
-                  onClick={handleCreateBranch}
-                  disabled={!newBranchName.trim()}
-                  className="p-1 rounded hover:bg-white/10 text-emerald-400 disabled:opacity-30"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => {
+            <div className="flex gap-1">
+              <Input
+                ref={newBranchInputRef}
+                type="text"
+                value={newBranchName}
+                onChange={(e) => setNewBranchName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateBranch()
+                  if (e.key === 'Escape') {
                     setShowNewBranchInput(false)
                     setNewBranchName('')
-                  }}
-                  className="p-1 rounded hover:bg-white/10 text-muted-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+                  }
+                }}
+                placeholder="New branch name..."
+                className="h-8 text-xs"
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleCreateBranch}
+                disabled={!newBranchName.trim()}
+                className="h-8 w-8 text-emerald-400 hover:bg-white/5 hover:text-emerald-300"
+              >
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  setShowNewBranchInput(false)
+                  setNewBranchName('')
+                  focusBranchSearch()
+                }}
+                className="h-8 w-8 hover:bg-white/5"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              className="h-8 w-full justify-start gap-2 rounded-md px-2 text-xs text-accent hover:bg-white/5 hover:text-accent"
               onClick={() => setShowNewBranchInput(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/5 text-accent border-b border-white/5"
             >
               <Plus className="w-3.5 h-3.5" />
               Create new branch
-            </button>
-          )}
-
-          {/* Local branches */}
-          <div className="py-1">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              Local
-            </div>
-            {localBranches.map((branch) => (
-              <button
-                key={branch.name}
-                onClick={() => handleCheckout(branch.name)}
-                disabled={branch.current}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-white/5 ${
-                  branch.current ? 'text-accent' : 'text-foreground'
-                }`}
-              >
-                {branch.current && <Check className="w-3 h-3" />}
-                <span className={branch.current ? '' : 'ml-5'}>{branch.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Remote branches */}
-          {remoteBranches.length > 0 && (
-            <div className="py-1 border-t border-white/5">
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Remote
-              </div>
-              {remoteBranches.slice(0, 10).map((branch) => (
-                <button
-                  key={branch.name}
-                  onClick={() => handleCheckout(branch.name.replace(/^origin\//, ''))}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-white/5 text-muted-foreground"
-                >
-                  <span className="ml-5">{branch.name}</span>
-                </button>
-              ))}
-              {remoteBranches.length > 10 && (
-                <div className="px-3 py-1.5 text-[10px] text-muted-foreground/50">
-                  +{remoteBranches.length - 10} more
-                </div>
-              )}
-            </div>
+            </Button>
           )}
         </div>
-      )}
-    </div>
+
+        <Command shouldFilter={false} className="rounded-none bg-transparent text-foreground">
+          <CommandInput
+            ref={branchSearchInputRef}
+            value={branchSearch}
+            onValueChange={setBranchSearch}
+            placeholder="Search branches..."
+            className="h-10 text-xs"
+          />
+          <CommandList className="max-h-80 p-1.5">
+            {filteredLocalBranches.length === 0 && filteredRemoteBranches.length === 0 && (
+              <CommandEmpty className="py-3 text-xs text-muted-foreground/60">No branches found</CommandEmpty>
+            )}
+
+            {filteredLocalBranches.length > 0 && (
+              <CommandGroup heading="Local">
+                {filteredLocalBranches.map((branch) => (
+                  <CommandItem
+                    key={branch.name}
+                    value={`local-${branch.name}`}
+                    onSelect={() => !branch.current && handleCheckout(branch.name)}
+                    disabled={branch.current}
+                    className={cn(
+                      'gap-1 rounded-md px-2 py-2 text-xs leading-snug data-[selected=true]:bg-white/5 data-[selected=true]:text-foreground',
+                      branch.current
+                        ? 'text-accent data-[disabled=true]:cursor-default data-[disabled=true]:opacity-100'
+                        : 'text-foreground'
+                    )}
+                  >
+                    <Check className={cn('w-3 h-3', !branch.current && 'opacity-0')} />
+                    <span>{branch.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {filteredLocalBranches.length > 0 && filteredRemoteBranches.length > 0 && <CommandSeparator />}
+
+            {filteredRemoteBranches.length > 0 && (
+              <CommandGroup
+                heading="Remote"
+                className="px-1 pb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground/60"
+              >
+                {filteredRemoteBranches.slice(0, 10).map((branch) => (
+                  <CommandItem
+                    key={branch.name}
+                    value={`remote-${branch.name}`}
+                    onSelect={() => handleCheckout(branch.name)}
+                    className="gap-2 rounded-md px-2 py-2 text-xs leading-snug text-muted-foreground data-[selected=true]:bg-white/5 data-[selected=true]:text-foreground"
+                  >
+                    <span className="w-3" />
+                    <span>{branch.name}</span>
+                  </CommandItem>
+                ))}
+                {filteredRemoteBranches.length > 10 && (
+                  <div className="px-3 py-1.5 text-[10px] text-muted-foreground/50">
+                    +{filteredRemoteBranches.length - 10} more
+                  </div>
+                )}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }

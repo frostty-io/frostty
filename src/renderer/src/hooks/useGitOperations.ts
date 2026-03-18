@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import type { GitOperationResult } from '../../../shared/ipc'
 
-export function useGitOperations(cwd: string | null) {
+export function useGitOperations(cwd: string | null, paneId?: string | null) {
   const runGitOperation = useCallback(
     async (operation: () => Promise<GitOperationResult>, successMessage?: string) => {
       if (!cwd) {
@@ -40,12 +40,9 @@ export function useGitOperations(cwd: string | null) {
 
   const checkout = useCallback(
     (branch: string, create = false) => {
-      return runGitOperation(
-        () => window.electronAPI.gitCheckout(cwd || '', branch, create),
-        `Switched to ${branch}`
-      )
+      return runGitOperation(() => window.electronAPI.gitCheckout(cwd || '', branch, create, paneId || undefined))
     },
-    [cwd, runGitOperation]
+    [cwd, paneId, runGitOperation]
   )
 
   return { runGitOperation, fetch, pull, push, checkout }

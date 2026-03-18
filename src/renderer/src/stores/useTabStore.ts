@@ -53,7 +53,7 @@ interface TabState {
   splitSizes: Record<string, number>
 
   // Terminal refs - keyed by pane ID
-  terminalRefs: Map<string, { enterAIMode: () => void; serialize: () => string; clear: () => void }>
+  terminalRefs: Map<string, { enterAIMode: () => void; serialize: () => string; clear: () => void; focus: () => void }>
   // Map of paneId -> scrollback content for restored tabs
   initialContentMap: Map<string, string>
 
@@ -61,6 +61,7 @@ interface TabState {
   getActiveTab: () => TabEntry | null
   getActivePane: () => Pane | null
   getAllPaneIds: () => string[]
+  focusActiveTerminal: () => void
 
   // Tab CRUD
   addTab: (pane: Pane) => string
@@ -84,7 +85,7 @@ interface TabState {
   setSplitSize: (tabId: string, size: number) => void
 
   // Terminal ref management
-  setTerminalRef: (paneId: string, ref: { enterAIMode: () => void; serialize: () => string; clear: () => void } | null) => void
+  setTerminalRef: (paneId: string, ref: { enterAIMode: () => void; serialize: () => string; clear: () => void; focus: () => void } | null) => void
 
   // Session
   restoreSession: (session: WindowSession, profiles: Profile[], defaultProfileId: string) => void
@@ -114,6 +115,12 @@ export const useTabStore = create<TabState>((set, get) => ({
 
   getAllPaneIds: () => {
     return get().tabs.flatMap((t) => t.panes.map((p) => p.id))
+  },
+
+  focusActiveTerminal: () => {
+    const tab = get().getActiveTab()
+    if (!tab) return
+    get().terminalRefs.get(tab.activePaneId)?.focus()
   },
 
   // Tab CRUD

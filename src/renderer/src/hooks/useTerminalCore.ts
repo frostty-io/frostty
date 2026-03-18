@@ -673,5 +673,11 @@ export function useTerminalCore({
     }
   }, [])
 
-  return { setContainerRef, enterAIMode, serialize, clear }
+  const focus = useCallback(() => {
+    if (terminalRef.current && !isDisposedRef.current) {
+      terminalRef.current.focus()
+    }
+  }, [])
+
+  return { setContainerRef, enterAIMode, serialize, clear, focus }
 }
