@@ -139,7 +139,7 @@ export async function generateCommand(request: AIGenerateCommandRequest): Promis
     } catch {
       // Try to extract command from non-JSON response
       // Sometimes models return markdown code blocks
-      const codeBlockMatch = content.match(/```(?:bash|sh|zsh|fish)?\s*([\s\S]*?)```/)
+      const codeBlockMatch = content.match(/```(?:bash|sh|zsh|fish|nu|nushell)?\s*([\s\S]*?)```/)
       if (codeBlockMatch) {
         return {
           success: true,

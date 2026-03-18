@@ -1,13 +1,14 @@
 import { TERMINAL_FONT_SIZE_DEFAULT } from './constants'
 
 // Supported shell types
-export type ShellType = 'system' | 'zsh' | 'bash' | 'fish'
+export type ShellType = 'system' | 'zsh' | 'bash' | 'fish' | 'nu'
 
 export const SHELL_OPTIONS: { value: ShellType; label: string; description: string }[] = [
   { value: 'system', label: 'System Default', description: 'Use your system\'s default shell' },
   { value: 'zsh', label: 'Zsh', description: 'Z shell with advanced features' },
   { value: 'bash', label: 'Bash', description: 'Bourne Again Shell' },
-  { value: 'fish', label: 'Fish', description: 'Friendly Interactive Shell' }
+  { value: 'fish', label: 'Fish', description: 'Friendly Interactive Shell' },
+  { value: 'nu', label: 'Nushell', description: 'Modern data-oriented shell' }
 ]
 
 // IPC Channel Names
@@ -200,7 +201,7 @@ export interface AIGenerateCommandResponse {
 export interface Profile {
   id: string           // UUID or slug
   name: string         // User-facing name (e.g., "Default", "Work", "Server")
-  shell: ShellType     // 'system' | 'zsh' | 'bash' | 'fish'
+  shell: ShellType     // 'system' | 'zsh' | 'bash' | 'fish' | 'nu'
   homeDirectory: string // e.g., '~', '/srv/myproject'
   tabColor: string     // CSS color for the tab border, e.g. '#3b82f6'
   shellFontSize: number
