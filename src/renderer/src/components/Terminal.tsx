@@ -34,7 +34,7 @@ function Terminal({
   openRouterModel,
   currentCwd
 }: TerminalProps) {
-  const { setContainerRef, enterAIMode, serialize, clear } = useTerminalCore({
+  const { setContainerRef, enterAIMode, serialize, clear, focus } = useTerminalCore({
     tabId,
     isActive,
     fontSize,
@@ -49,11 +49,11 @@ function Terminal({
   })
 
   useEffect(() => {
-    useTabStore.getState().setTerminalRef(tabId, { enterAIMode, serialize, clear })
+    useTabStore.getState().setTerminalRef(tabId, { enterAIMode, serialize, clear, focus })
     return () => {
       useTabStore.getState().setTerminalRef(tabId, null)
     }
-  }, [tabId, enterAIMode, serialize, clear])
+  }, [tabId, enterAIMode, serialize, clear, focus])
 
   return (
     <div className="absolute inset-3 right-0">

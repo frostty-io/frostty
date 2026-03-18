@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Kbd } from '../ui/kbd'
 import { cn } from '@/lib/utils'
 import {
@@ -11,6 +11,8 @@ import {
   RotateCcw,
   Download,
   FolderGit2,
+  GitBranch,
+  GitBranchPlus,
   Clock,
   User,
   AppWindow,
@@ -25,6 +27,7 @@ import type { GitOperationResult, Profile } from '../../../../shared/ipc'
 import { BasePalette } from './BasePalette'
 import { usePlatform } from '@/hooks/usePlatform'
 import { getShortcutDisplay } from '@/lib/shortcutRegistry'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface Command {
   id: string
@@ -66,6 +69,8 @@ export default function CommandPalette({
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([])
+  const pendingBranchSelectorOpenRef = useRef(false)
+  const pendingBranchCreateRef = useRef(false)
 
   // Load recent commands when palette opens
   useEffect(() => {
@@ -242,6 +247,34 @@ export default function CommandPalette({
         }
       },
       {
+        id: 'git-switch-branch',
+        name: 'Git: Switch Branch',
+        description: 'Open the branch selector and search branches',
+        icon: GitBranch,
+        action: () => {
+          if (!activeCwd) {
+            toast.error('No active directory to switch branches')
+            return
+          }
+          pendingBranchSelectorOpenRef.current = true
+          onOpenChange(false)
+        }
+      },
+      {
+        id: 'git-create-branch',
+        name: 'Git: Create Branch',
+        description: 'Create a new branch from the current HEAD',
+        icon: GitBranchPlus,
+        action: () => {
+          if (!activeCwd) {
+            toast.error('No active directory to create a branch')
+            return
+          }
+          pendingBranchCreateRef.current = true
+          onOpenChange(false)
+        }
+      },
+      {
         id: 'open-vscode',
         name: 'Editor: Open in VS Code',
         description: 'Open current directory in Visual Studio Code',
@@ -406,6 +439,18 @@ export default function CommandPalette({
       itemCount={commandItems.length}
       enterLabel="Execute"
       emptyMessage={`No commands found for "${query}"`}
+      onCloseAutoFocus={(event) => {
+        if (pendingBranchCreateRef.current) {
+          pendingBranchCreateRef.current = false
+          event.preventDefault()
+          useUIStore.getState().openBranchSelectorInCreateMode()
+          return
+        }
+        if (!pendingBranchSelectorOpenRef.current) return
+        pendingBranchSelectorOpenRef.current = false
+        event.preventDefault()
+        useUIStore.getState().openBranchSelector()
+      }}
       onKeyDown={handleKeyDown}
     >
       <div data-palette-list="commands">

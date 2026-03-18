@@ -227,7 +227,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   profiles: [DEFAULT_PROFILE],
   defaultProfileId: 'default',
   openRouterApiKey: '',
-  openRouterModel: 'openai/gpt-oss-120b'
+  openRouterModel: 'openrouter/free'
 }
 
 export function normalizeHomeDirectory(input: string): string {
@@ -312,7 +312,7 @@ export interface ElectronAPI {
   gitRepoInfo: (cwd: string) => Promise<GitRepoInfoResult>
   gitStatus: (cwd: string) => Promise<GitStatus>
   gitBranches: (cwd: string) => Promise<GitBranch[]>
-  gitCheckout: (cwd: string, branch: string, create?: boolean) => Promise<GitOperationResult>
+  gitCheckout: (cwd: string, branch: string, create?: boolean, paneId?: string) => Promise<GitOperationResult>
   gitPull: (cwd: string) => Promise<GitOperationResult>
   gitPush: (cwd: string, force?: boolean) => Promise<GitOperationResult>
   gitFetch: (cwd: string) => Promise<GitOperationResult>

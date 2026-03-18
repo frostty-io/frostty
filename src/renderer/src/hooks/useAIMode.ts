@@ -111,7 +111,7 @@ export function useAIMode({
         shell: shellRef.current || 'zsh',
         cwd: currentCwdRef.current || '~',
         apiKey: openRouterApiKeyRef.current || '',
-        model: openRouterModelRef.current || 'openai/gpt-oss-120b'
+        model: openRouterModelRef.current || 'openrouter/free'
       })
 
       stopSpinner()

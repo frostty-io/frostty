@@ -77,6 +77,7 @@ export default function App() {
   const settingsLoaded = useSettingsStore((s) => s.settingsLoaded)
 
   const settingsOpen = useUIStore((s) => s.settingsOpen)
+  const branchSelectorOpen = useUIStore((s) => s.branchSelectorOpen)
   const sessionLoaded = useUIStore((s) => s.sessionLoaded)
   const activeDragId = useUIStore((s) => s.activeDragId)
   const commandPaletteOpen = useUIStore((s) => s.commandPaletteOpen)
@@ -94,7 +95,7 @@ export default function App() {
   const activePane = activeTab
     ? activeTab.panes.find((p) => p.id === activeTab.activePaneId) || activeTab.panes[0] || null
     : null
-  const modalOpen = commandPaletteOpen || projectPaletteOpen || settingsOpen
+  const modalOpen = commandPaletteOpen || projectPaletteOpen || settingsOpen || branchSelectorOpen
   const getProfile = useSettingsStore.getState().getProfile
   const paneCwdUpdatedAtRef = useRef<Record<string, number>>({})
   const cwdPollingInFlightRef = useRef<Set<string>>(new Set())
@@ -368,7 +369,7 @@ export default function App() {
 
           {/* Terminal area (hidden when settings is open) */}
           <div className={`flex-1 flex flex-col ${settingsOpen ? 'hidden' : ''}`}>
-            <GitBar cwd={activePane?.cwd || '~'} />
+            <GitBar cwd={activePane?.cwd || '~'} paneId={activePane?.id} />
 
             <div className="flex-1 relative" ref={terminalAreaRef}>
               {tabs.flatMap((tab) => {
@@ -454,7 +455,7 @@ export default function App() {
         />
 
         {/* Toast notifications */}
-        <Toaster position="top-center" />
+        <Toaster position="bottom-center" />
       </div>
 
       {/* Drag overlay */}

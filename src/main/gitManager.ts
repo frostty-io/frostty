@@ -1,6 +1,7 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import * as os from 'os'
+import * as fs from 'fs'
 import { basename } from 'path'
 import { ipcMain } from 'electron'
 import {
@@ -12,6 +13,8 @@ import {
   GitStashEntry
 } from '../shared/ipc'
 import { GIT_MAX_BUFFER } from '../shared/constants'
+import { recoverPtyCwd } from './ptyManager'
+import { parseGitBranches, resolveGitCheckout } from './services/gitBranchService'
 import { getGitStatusViaPorcelainV2 } from './services/gitStatusService'
 import { scanGitRepos } from './services/repoScanner'
 
@@ -34,6 +37,24 @@ async function runGitCommand(cwd: string, args: string): Promise<{ stdout: strin
     maxBuffer: GIT_MAX_BUFFER,
     timeout: GIT_COMMAND_TIMEOUT_MS
   })
+}
+
+function expandHomePath(path: string): string {
+  return path.replace(/^~/, os.homedir())
+}
+
+function shouldRecoverPaneCwd(currentCwd: string, repoRoot: string): boolean {
+  const expandedCwd = expandHomePath(currentCwd)
+
+  if (!expandedCwd.startsWith(repoRoot + '/') && expandedCwd !== repoRoot) {
+    return false
+  }
+
+  try {
+    return !fs.existsSync(expandedCwd) || !fs.statSync(expandedCwd).isDirectory()
+  } catch {
+    return true
+  }
 }
 
 // ── Lightweight repo info (for tab display) ─────────────────────────────────
@@ -59,22 +80,11 @@ async function getGitStatus(cwd: string): Promise<GitStatus> {
 
 async function getGitBranches(cwd: string): Promise<GitBranch[]> {
   try {
-    const { stdout } = await runGitCommand(cwd, 'branch -a --format="%(HEAD)|%(refname:short)|%(upstream:short)"')
-    const branches: GitBranch[] = []
-
-    for (const line of stdout.split('\n')) {
-      if (!line.trim()) continue
-      const [head, name, upstream] = line.split('|')
-      const isRemote = name.startsWith('remotes/')
-      branches.push({
-        name: isRemote ? name.replace('remotes/', '') : name,
-        current: head === '*',
-        remote: isRemote,
-        upstream: upstream || null
-      })
-    }
-
-    return branches
+    const { stdout } = await runGitCommand(
+      cwd,
+      'for-each-ref refs/heads refs/remotes --format="%(HEAD)|%(refname)|%(refname:short)|%(upstream:short)"'
+    )
+    return parseGitBranches(stdout)
   } catch {
     return []
   }
@@ -82,11 +92,18 @@ async function getGitBranches(cwd: string): Promise<GitBranch[]> {
 
 // ── Git operations ───────────────────────────────────────────────────────────
 
-async function gitCheckout(cwd: string, branch: string, create = false): Promise<GitOperationResult> {
+async function gitCheckout(cwd: string, branch: string, create = false, paneId?: string): Promise<GitOperationResult> {
   try {
-    const flag = create ? '-b' : ''
-    await runGitCommand(cwd, `checkout ${flag} ${branch}`)
-    return { success: true, message: `Switched to branch '${branch}'` }
+    const { stdout: toplevel } = await runGitCommand(cwd, 'rev-parse --show-toplevel')
+    const repoRoot = toplevel.trim() || expandHomePath(cwd)
+    const checkout = await resolveGitCheckout(repoRoot, branch, create, runGitCommand)
+    await runGitCommand(repoRoot, checkout.args)
+
+    if (paneId && shouldRecoverPaneCwd(cwd, repoRoot)) {
+      recoverPtyCwd(paneId, repoRoot)
+    }
+
+    return { success: true, message: checkout.message }
   } catch (err) {
     const error = err as Error & { stderr?: string }
     return { success: false, message: 'Checkout failed', error: error.stderr || error.message }
@@ -229,8 +246,8 @@ export function registerGitHandlers(): void {
     return getGitBranches(cwd)
   })
 
-  ipcMain.handle(IPC_CHANNELS.GIT_CHECKOUT, (_event, cwd: string, branch: string, create?: boolean) => {
-    return gitCheckout(cwd, branch, create)
+  ipcMain.handle(IPC_CHANNELS.GIT_CHECKOUT, (_event, cwd: string, branch: string, create?: boolean, paneId?: string) => {
+    return gitCheckout(cwd, branch, create, paneId)
   })
 
   ipcMain.handle(IPC_CHANNELS.GIT_PULL, (_event, cwd: string) => {

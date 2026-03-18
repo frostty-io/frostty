@@ -214,6 +214,15 @@ function resolveInitialCwd(requestedCwd?: string): string {
   return homeDir
 }
 
+function quoteShellArg(input: string): string {
+  return `'${input.replace(/'/g, `'\"'\"'`)}'`
+}
+
+function normalizeReportedCwd(cwd: string): string {
+  const homeDir = os.homedir()
+  return cwd.startsWith(homeDir) ? cwd.replace(homeDir, '~') : cwd
+}
+
 /**
  * Spawn a new PTY process for a tab
  */
@@ -222,9 +231,7 @@ export async function spawnPty(tabId: string, window: BrowserWindow, requestedCw
   const homeDir = os.homedir()
   const shellName = shell.split('/').pop() || 'sh'
   const resolvedCwd = resolveInitialCwd(requestedCwd)
-  const reportedCwd = resolvedCwd.startsWith(homeDir)
-    ? resolvedCwd.replace(homeDir, '~')
-    : resolvedCwd
+  const reportedCwd = normalizeReportedCwd(resolvedCwd)
 
   // Initialize shell integration scripts
   const integrationPaths = await ensureShellIntegration()
@@ -336,6 +343,24 @@ export function killPty(tabId: string): void {
   }
   clearPtyCwd(tabId)
   ptyWindowMap.delete(tabId)
+}
+
+export function recoverPtyCwd(tabId: string, cwd: string): void {
+  const ptyProcess = ptyProcesses.get(tabId)
+  if (!ptyProcess) return
+
+  const normalizedCwd = normalizeReportedCwd(cwd)
+  ptyProcess.write(`cd -- ${quoteShellArg(cwd)}\r`)
+  updatePtyCwd(tabId, normalizedCwd)
+
+  const webContentsId = ptyWindowMap.get(tabId)
+  const window = webContentsId
+    ? BrowserWindow.getAllWindows().find((win) => win.webContents.id === webContentsId)
+    : null
+
+  if (window && !window.isDestroyed()) {
+    window.webContents.send(IPC_CHANNELS.PTY_CWD, { tabId, cwd: normalizedCwd })
+  }
 }
 
 /**
