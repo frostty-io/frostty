@@ -566,6 +566,8 @@ export function useTerminalCore({
   // Handle PTY exit
   useEffect(() => {
     const unsubscribe = window.electronAPI.onPtyExitForTab(tabId, (event) => {
+      // Allow this pane to spawn a fresh PTY if the terminal re-initializes after exit.
+      spawnedPtys.delete(tabId)
       if (terminalRef.current && !isDisposedRef.current) {
         terminalRef.current.write(`\r\n[Process exited with code ${event.exitCode}]`)
       }
