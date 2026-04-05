@@ -1,6 +1,7 @@
 import * as pty from 'node-pty'
 import * as os from 'os'
 import * as fs from 'fs'
+import * as path from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { BrowserWindow } from 'electron'
@@ -114,7 +115,27 @@ function shellExists(shellPath: string): boolean {
 const SHELL_PATHS: Record<Exclude<ShellType, 'system'>, string[]> = {
   zsh: ['/bin/zsh', '/usr/bin/zsh', '/usr/local/bin/zsh', '/opt/homebrew/bin/zsh'],
   bash: ['/bin/bash', '/usr/bin/bash', '/usr/local/bin/bash', '/opt/homebrew/bin/bash'],
-  fish: ['/usr/local/bin/fish', '/opt/homebrew/bin/fish', '/usr/bin/fish', '/bin/fish']
+  fish: ['/usr/local/bin/fish', '/opt/homebrew/bin/fish', '/usr/bin/fish', '/bin/fish'],
+  nu: ['/opt/homebrew/bin/nu', '/usr/local/bin/nu', '/usr/bin/nu', '/bin/nu', `${os.homedir()}/.cargo/bin/nu`]
+}
+
+function findExecutableInPath(names: string[]): string | null {
+  const envPath = process.env.PATH
+  if (!envPath) return null
+
+  for (const dir of envPath.split(path.delimiter)) {
+    const trimmedDir = dir.trim()
+    if (!trimmedDir) continue
+
+    for (const name of names) {
+      const executablePath = path.join(trimmedDir, name)
+      if (shellExists(executablePath)) {
+        return executablePath
+      }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -128,6 +149,14 @@ function getShellPath(shellType: Exclude<ShellType, 'system'>): string | null {
       return shellPath
     }
   }
+
+  if (shellType === 'nu') {
+    const nuPathNames = process.platform === 'win32'
+      ? ['nu.exe', 'nu']
+      : ['nu']
+    return findExecutableInPath(nuPathNames)
+  }
+
   return null
 }
 
@@ -139,7 +168,7 @@ export function getAvailableShells(): AvailableShell[] {
     { type: 'system', path: getSystemShell(), available: true }
   ]
 
-  for (const shellType of ['zsh', 'bash', 'fish'] as const) {
+  for (const shellType of ['zsh', 'bash', 'fish', 'nu'] as const) {
     const shellPath = getShellPath(shellType)
     shells.push({
       type: shellType,
@@ -326,9 +355,17 @@ export function writePty(tabId: string, data: string): void {
  * Resize a PTY process
  */
 export function resizePty(tabId: string, cols: number, rows: number): void {
+  if (cols <= 0 || rows <= 0) {
+    return
+  }
+
   const ptyProcess = ptyProcesses.get(tabId)
   if (ptyProcess) {
-    ptyProcess.resize(cols, rows)
+    try {
+      ptyProcess.resize(cols, rows)
+    } catch (error) {
+      console.warn(`Failed to resize PTY ${tabId} to ${cols}x${rows}:`, error)
+    }
   }
 }
 
