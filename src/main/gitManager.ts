@@ -290,7 +290,7 @@ export function registerGitHandlers(): void {
     return gitDiscard(cwd, files)
   })
 
-  ipcMain.handle(IPC_CHANNELS.SCAN_GIT_REPOS, (_event, baseDir: string) => {
-    return scanGitRepos(baseDir)
+  ipcMain.handle(IPC_CHANNELS.SCAN_GIT_REPOS, (_event, baseDirs: string[]) => {
+    return scanGitRepos(baseDirs)
   })
 }

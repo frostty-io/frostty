@@ -107,10 +107,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setReposLoading: (loading) => set({ reposLoading: loading }),
 
   fetchRepos: async () => {
-    const defaultProfile = get().getDefaultProfile()
+    const { settings } = get()
+    const distinctDirs = [...new Set(settings.profiles.map((p) => p.homeDirectory))]
     set({ reposLoading: true })
     try {
-      const repos = await window.electronAPI.scanGitRepos(defaultProfile.homeDirectory)
+      const repos = await window.electronAPI.scanGitRepos(distinctDirs)
       set({ cachedRepos: repos, reposLoading: false })
     } catch {
       set({ reposLoading: false })

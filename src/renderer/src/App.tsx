@@ -231,7 +231,7 @@ export default function App() {
   useEffect(() => {
     if (!settingsLoaded) return
     useSettingsStore.getState().fetchRepos()
-  }, [settingsLoaded, settings.defaultProfileId])
+  }, [settingsLoaded, settings.profiles])
 
   // 8. Save settings on change (debounced 500ms to avoid IPC flood while typing)
   const saveSettingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)

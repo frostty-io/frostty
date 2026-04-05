@@ -215,8 +215,8 @@ const electronAPI: ElectronAPI = {
   },
 
   // File system APIs
-  scanGitRepos: async (baseDir: string): Promise<GitRepoInfo[]> => {
-    return ipcRenderer.invoke(IPC_CHANNELS.SCAN_GIT_REPOS, baseDir)
+  scanGitRepos: async (baseDirs: string[]): Promise<GitRepoInfo[]> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.SCAN_GIT_REPOS, baseDirs)
   },
 
   // Editor APIs
