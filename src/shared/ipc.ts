@@ -325,7 +325,7 @@ export interface ElectronAPI {
   gitStashList: (cwd: string) => Promise<GitStashEntry[]>
   gitDiscard: (cwd: string, files: string[]) => Promise<GitOperationResult>
   // File system APIs
-  scanGitRepos: (baseDir: string) => Promise<GitRepoInfo[]>
+  scanGitRepos: (baseDirs: string[]) => Promise<GitRepoInfo[]>
   // Editor APIs
   openInVSCode: (cwd: string) => Promise<void>
   openInCursor: (cwd: string) => Promise<void>

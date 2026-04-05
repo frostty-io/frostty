@@ -35,15 +35,17 @@ async function checkForGitRepo(dirPath: string): Promise<boolean> {
   }
 }
 
-export async function scanGitRepos(baseDir: string): Promise<GitRepoInfo[]> {
-  const repos: GitRepoInfo[] = []
-  const seenPaths = new Set<string>()
+async function scanGitReposInDir(
+  baseDir: string,
+  repos: GitRepoInfo[],
+  seenPaths: Set<string>
+): Promise<void> {
   const expandedDir = baseDir.replace(/^~/, os.homedir())
 
   try {
     await access(expandedDir, fs.constants.R_OK)
   } catch {
-    return repos
+    return
   }
 
   const queue: ScanQueueItem[] = [{ dir: expandedDir, depth: 1 }]
@@ -89,6 +91,21 @@ export async function scanGitRepos(baseDir: string): Promise<GitRepoInfo[]> {
     for (const next of batchResults) {
       queue.push(...next)
     }
+  }
+}
+
+export async function scanGitRepos(baseDirs: string[]): Promise<GitRepoInfo[]> {
+  const repos: GitRepoInfo[] = []
+  const seenPaths = new Set<string>()
+
+  const seen = new Set<string>()
+  const uniqueDirs = baseDirs.filter((dir) => {
+    if (seen.has(dir)) return false
+    seen.add(dir)
+    return true
+  })
+  for (const baseDir of uniqueDirs) {
+    await scanGitReposInDir(baseDir, repos, seenPaths)
   }
 
   repos.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
