@@ -213,7 +213,7 @@ jobs:
             dist/SHA256SUMS.txt
 
       - name: Cleanup old canary releases
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           KEEP_CANARY: '20'
         with:
