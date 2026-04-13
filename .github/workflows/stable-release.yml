@@ -142,7 +142,7 @@ jobs:
           done < <(find dist -type f \( -name '*.dmg' -o -name '*.zip' \) -print0)
 
       - name: Upload artifacts to stable release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
           fail_on_unmatched_files: false
