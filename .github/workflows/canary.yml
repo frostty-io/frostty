@@ -54,7 +54,7 @@ jobs:
 
       - name: Resolve next version with release-please (dry-run)
         id: next_version
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
